@@ -4,7 +4,7 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { LayoutDashboard, Users, Calendar, Search, Download, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Search, Download, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -30,12 +30,20 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState('');
   const [deleteId, setDeleteId] = useState(null);
 
+  // Timer Settings State
+  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [timerTargetDate, setTimerTargetDate] = useState('');
+  const [timerTitle, setTimerTitle] = useState('Registration Closes In');
+  const [timerSaving, setTimerSaving] = useState(false);
+  const [timerMessage, setTimerMessage] = useState({ text: '', type: '' });
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
     if (isLoggedIn) {
       fetchStats();
       fetchRegistrations();
+      fetchTimerSettings();
     }
   }, [isLoggedIn]);
 
@@ -49,6 +57,53 @@ export default function AdminDashboard() {
     }
   }, [search, isLoggedIn]);
 
+
+  const fetchTimerSettings = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/settings/timer`);
+      if (response.data && response.data.value) {
+        const { isEnabled, targetDate, title } = response.data.value;
+        setTimerEnabled(isEnabled);
+        setTimerTitle(title || 'Registration Closes In');
+        if (targetDate) {
+          const dateObj = new Date(targetDate);
+          if (!isNaN(dateObj.getTime())) {
+            const tzoffset = dateObj.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(dateObj.getTime() - tzoffset).toISOString().slice(0, 16);
+            setTimerTargetDate(localISOTime);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching timer settings:', error);
+    }
+  };
+
+  const handleSaveTimerSettings = async (e) => {
+    e.preventDefault();
+    setTimerSaving(true);
+    setTimerMessage({ text: '', type: '' });
+    try {
+      const targetDateISO = new Date(timerTargetDate).toISOString();
+      const payload = {
+        value: {
+          isEnabled: timerEnabled,
+          targetDate: targetDateISO,
+          title: timerTitle
+        }
+      };
+      await axios.post(`${API_BASE_URL}/settings/timer`, payload);
+      setTimerMessage({ text: 'Timer settings updated successfully!', type: 'success' });
+      setTimeout(() => {
+        setTimerMessage({ text: '', type: '' });
+      }, 5000);
+    } catch (error) {
+      console.error('Error saving timer settings:', error);
+      setTimerMessage({ text: error.response?.data?.message || 'Failed to save timer settings.', type: 'error' });
+    } finally {
+      setTimerSaving(false);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -331,80 +386,183 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* FILTER SEARCH BAR */}
-      <div className="bg-dark-card border border-gold/15 rounded-xl p-4 md:p-6 mb-8 flex flex-col md:flex-row gap-4 items-center shadow-lg">
-        <div className="relative w-full">
-          <Search className="w-5 h-5 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search registrations by ID, Team Name, or Team Leader..."
-            className="w-full bg-[#0d0d0f] border border-gold/10 hover:border-gold/25 focus:border-gold-bright focus:outline-none rounded-lg py-3 pl-11 pr-4 text-white text-sm transition-all"
-          />
-        </div>
-      </div>
+      {/* TWO-COLUMN GRID LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mb-8">
+        
+        {/* Left 3/4 columns: Search + Table */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* FILTER SEARCH BAR */}
+          <div className="bg-dark-card border border-gold/15 rounded-xl p-4 md:p-6 flex flex-col md:flex-row gap-4 items-center shadow-lg">
+            <div className="relative w-full">
+              <Search className="w-5 h-5 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search registrations by ID, Team Name, or Team Leader..."
+                className="w-full bg-[#0d0d0f] border border-gold/10 hover:border-gold/25 focus:border-gold-bright focus:outline-none rounded-lg py-3 pl-11 pr-4 text-white text-sm transition-all"
+              />
+            </div>
+          </div>
 
-      {/* REGISTRATIONS LIST TABLE */}
-      <div className="bg-dark-card border border-gold/15 rounded-xl overflow-hidden shadow-xl">
-        {loading ? (
-          <div className="py-24 text-center">
-            <div className="inline-block w-8 h-8 border-4 border-gold/30 border-t-gold-bright rounded-full animate-spin mb-4" />
-            <p className="text-gray-400 font-gaming text-sm">Querying Database...</p>
+          {/* REGISTRATIONS LIST TABLE */}
+          <div className="bg-dark-card border border-gold/15 rounded-xl overflow-hidden shadow-xl">
+            {loading ? (
+              <div className="py-24 text-center">
+                <div className="inline-block w-8 h-8 border-4 border-gold/30 border-t-gold-bright rounded-full animate-spin mb-4" />
+                <p className="text-gray-400 font-gaming text-sm">Querying Database...</p>
+              </div>
+            ) : errorMsg ? (
+              <div className="py-16 text-center text-red-400">
+                <ShieldAlert className="w-12 h-12 mx-auto mb-3 text-red-500" />
+                <p className="font-medium">{errorMsg}</p>
+              </div>
+            ) : registrations.length === 0 ? (
+              <div className="py-20 text-center text-gray-500 font-sans">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                <p className="text-sm">No tournament registrations found matching filters.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-black/55 border-b border-gold/15 text-xs font-gaming text-gold-bright uppercase tracking-wider">
+                      <th className="py-4 px-6 font-bold">Registration ID</th>
+                      <th className="py-4 px-6 font-bold">Team Name</th>
+                      <th className="py-4 px-6 font-bold">Team Leader</th>
+                      <th className="py-4 px-6 font-bold">Discord Username</th>
+                      <th className="py-4 px-6 font-bold">Submission Date</th>
+                      <th className="py-4 px-6 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gold/5 text-sm">
+                    {registrations.map((reg) => (
+                      <tr key={reg._id} className="hover:bg-[#1A1A1E]/30 transition-colors">
+                        <td className="py-4 px-6 font-gaming font-bold text-white tracking-widest">{reg.registrationId}</td>
+                        <td className="py-4 px-6 font-semibold text-white">{reg.teamName}</td>
+                        <td className="py-4 px-6 text-gray-300">{reg.teamLeaderName}</td>
+                        <td className="py-4 px-6 text-gray-400 font-mono">{reg.discordUsername}</td>
+                        <td className="py-4 px-6 text-gray-400">{new Date(reg.submittedAt).toLocaleDateString()}</td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex justify-end gap-3">
+                            <Link
+                              to={`/admin/registration/${reg._id}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-650 rounded text-xs transition-all cursor-pointer font-bold"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View Details
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteClick(reg._id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-650 hover:bg-red-600 text-white rounded text-xs transition-all cursor-pointer font-bold"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        ) : errorMsg ? (
-          <div className="py-16 text-center text-red-400">
-            <ShieldAlert className="w-12 h-12 mx-auto mb-3 text-red-500" />
-            <p className="font-medium">{errorMsg}</p>
+        </div>
+
+        {/* Right 1/4 column: Timer settings */}
+        <div className="lg:col-span-1">
+          <div className="bg-[#0b0b0d] border border-gold/15 rounded-xl p-5 shadow-xl relative overflow-hidden font-sans">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient" />
+            <h3 className="font-gaming font-bold text-sm text-gold-bright uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gold" /> Timer Setup
+            </h3>
+            
+            {timerMessage.text && (
+              <div className={`p-3 rounded mb-4 text-xs flex items-center gap-2 border ${
+                timerMessage.type === 'success' 
+                  ? 'bg-emerald-950/45 border-emerald-500/35 text-emerald-255' 
+                  : 'bg-red-950/45 border-red-500/35 text-red-255'
+              }`}>
+                {timerMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />}
+                <span className="text-[11px] font-sans">{timerMessage.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveTimerSettings} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Timer Status
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="timer-status"
+                    checked={timerEnabled}
+                    onChange={(e) => setTimerEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <label
+                    htmlFor="timer-status"
+                    className={`w-9 h-5 rounded-full p-0.5 cursor-pointer transition-colors relative ${
+                      timerEnabled ? 'bg-[#D4AF37]' : 'bg-slate-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 bg-black rounded-full shadow-md transition-transform duration-200 transform ${
+                      timerEnabled ? 'translate-x-4' : 'translate-x-0'
+                    }`} />
+                  </label>
+                  <span className="text-xs text-gray-300 font-medium">
+                    {timerEnabled ? 'Enabled (Active)' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Timer Label
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={timerTitle}
+                  onChange={(e) => setTimerTitle(e.target.value)}
+                  placeholder="e.g., Registration Closes In"
+                  className="w-full bg-[#121214] border border-slate-700 hover:border-[#D4AF37]/50 focus:border-[#D4AF37] focus:outline-none rounded-lg p-2.5 text-white text-xs transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Target Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={timerTargetDate}
+                  onChange={(e) => setTimerTargetDate(e.target.value)}
+                  className="w-full bg-[#121214] border border-slate-700 hover:border-[#D4AF37]/50 focus:border-[#D4AF37] focus:outline-none rounded-lg p-2.5 text-white text-xs transition-all font-mono"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={timerSaving}
+                className="w-full bg-gold-gradient hover:brightness-110 disabled:opacity-50 text-black font-gaming font-black text-xs uppercase tracking-widest py-3 rounded shadow-gold-glow hover:shadow-gold-glow-btn transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {timerSaving ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5 text-black" />
+                    Save Settings
+                  </>
+                )}
+              </button>
+            </form>
           </div>
-        ) : registrations.length === 0 ? (
-          <div className="py-20 text-center text-gray-500 font-sans">
-            <Users className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-            <p className="text-sm">No tournament registrations found matching filters.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-black/55 border-b border-gold/15 text-xs font-gaming text-gold-bright uppercase tracking-wider">
-                  <th className="py-4 px-6 font-bold">Registration ID</th>
-                  <th className="py-4 px-6 font-bold">Team Name</th>
-                  <th className="py-4 px-6 font-bold">Team Leader</th>
-                  <th className="py-4 px-6 font-bold">Discord Username</th>
-                  <th className="py-4 px-6 font-bold">Submission Date</th>
-                  <th className="py-4 px-6 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gold/5 text-sm">
-                {registrations.map((reg) => (
-                  <tr key={reg._id} className="hover:bg-[#1A1A1E]/30 transition-colors">
-                    <td className="py-4 px-6 font-gaming font-bold text-white tracking-widest">{reg.registrationId}</td>
-                    <td className="py-4 px-6 font-semibold text-white">{reg.teamName}</td>
-                    <td className="py-4 px-6 text-gray-300">{reg.teamLeaderName}</td>
-                    <td className="py-4 px-6 text-gray-400 font-mono">{reg.discordUsername}</td>
-                    <td className="py-4 px-6 text-gray-400">{new Date(reg.submittedAt).toLocaleDateString()}</td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex justify-end gap-3">
-                        <Link
-                          to={`/admin/registration/${reg._id}`}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-650 rounded text-xs transition-all cursor-pointer font-bold"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> View Details
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteClick(reg._id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-650 hover:bg-red-600 text-white rounded text-xs transition-all cursor-pointer font-bold"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* DELETE CONFIRMATION MODAL */}

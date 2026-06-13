@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 const registrationRoutes = require('./routes/registrationRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API routes definition
 app.use('/api/registrations', registrationRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Default status root page
 app.get('/', (req, res) => {

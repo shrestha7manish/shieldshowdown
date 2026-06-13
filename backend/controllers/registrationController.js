@@ -1,5 +1,6 @@
 const Registration = require('../models/Registration');
 const Counter = require('../models/Counter');
+const Setting = require('../models/Setting');
 const fs = require('fs');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
@@ -61,6 +62,16 @@ exports.createRegistration = async (req, res) => {
   };
 
   try {
+    // Check if registration deadline has passed (timer constraint)
+    const timerSetting = await Setting.findOne({ key: 'timer' });
+    if (timerSetting && timerSetting.value && timerSetting.value.isEnabled) {
+      const deadline = new Date(timerSetting.value.targetDate);
+      if (deadline < new Date()) {
+        await cleanUploadedFiles(req.files);
+        return res.status(400).json({ message: 'Registration has closed as the deadline has passed.' });
+      }
+    }
+
     // If files are missing, clean up any uploaded files and return error
     if (!req.files || !req.files.youtubeProofs || !req.files.instagramProofs) {
       await cleanUploadedFiles(req.files);

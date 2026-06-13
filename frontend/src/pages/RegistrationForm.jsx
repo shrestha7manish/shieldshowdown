@@ -1,12 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { Shield, Upload, CheckCircle2, AlertTriangle, Users, Award, Camera, User, Check, RefreshCw, Trophy, Trash2, Eye, ExternalLink } from 'lucide-react';
+import { Shield, Upload, CheckCircle2, AlertTriangle, Users, Award, Camera, User, Check, RefreshCw, Trophy, Trash2, Eye, ExternalLink, Clock } from 'lucide-react';
 
 export default function RegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successData, setSuccessData] = useState(null);
+
+  // Timer Configuration and Countdown State
+  const [timerConfig, setTimerConfig] = useState({ isEnabled: false, targetDate: null, title: 'Registration Closes In' });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const fetchTimerConfig = async () => {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await axios.get(`${API_BASE_URL}/settings/timer`);
+        if (response.data && response.data.value) {
+          setTimerConfig(response.data.value);
+        }
+      } catch (error) {
+        console.error('Error fetching timer configuration:', error);
+      }
+    };
+    fetchTimerConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!timerConfig.isEnabled || !timerConfig.targetDate) return;
+
+    const calculateTimeLeft = () => {
+      const difference = +new Date(timerConfig.targetDate) - +new Date();
+      let newTimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      let expired = false;
+
+      if (difference > 0) {
+        newTimeLeft = {
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60)
+        };
+      } else {
+        expired = true;
+      }
+
+      setTimeLeft(newTimeLeft);
+      setIsExpired(expired);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerConfig]);
 
   useEffect(() => {
     document.body.style.backgroundImage = "linear-gradient(rgba(6, 6, 8, 0.45), rgba(6, 6, 8, 0.45)), url('/bg.jpg')";
@@ -336,10 +385,12 @@ export default function RegistrationForm() {
     scrollToFirstError(errors);
   };
 
+  const isFormDisabled = timerConfig.isEnabled && isExpired;
+
   // Submit button active state rule
   const activeYtFiles = ytFiles.slice(0, requiredCount);
   const activeIgFiles = igFiles.slice(0, requiredCount);
-  const isSubmitDisabled = loading;
+  const isSubmitDisabled = loading || isFormDisabled;
   const allProofsUploaded = activeYtFiles.every(Boolean) && activeIgFiles.every(Boolean);
 
   useEffect(() => {
@@ -412,9 +463,9 @@ export default function RegistrationForm() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 flex justify-center">
-      {/* Outer Container with Gold Border */}
-      <div className="w-full bg-[#060608]/75 backdrop-blur-md border-2 border-gold/40 rounded-xl overflow-hidden shadow-2xl">
+    <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row items-start gap-6">
+      {/* Left: Main Form Card */}
+      <div className="w-full lg:w-3/4 bg-[#060608]/75 backdrop-blur-md border-2 border-gold/40 rounded-xl overflow-hidden shadow-2xl order-2 lg:order-1">
         
         {/* HEADER SECTION (Banner Image Match) */}
         <div className="relative border-b border-gold/25 overflow-hidden">
@@ -428,6 +479,17 @@ export default function RegistrationForm() {
         {/* FORM FIELDS */}
         <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="p-6 md:p-10 space-y-10">
           
+          {/* Expired Warning Banner */}
+          {isFormDisabled && (
+            <div className="bg-red-950/45 border border-red-500/50 text-red-200 p-4 rounded-lg flex items-center gap-3 font-sans text-sm shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 animate-bounce" />
+              <div className="flex-grow text-left">
+                <span className="font-gaming font-black tracking-wider block text-white text-base mb-1">REGISTRATION HAS ENDED</span>
+                <span>The tournament registration window has officially closed. Submissions are no longer accepted.</span>
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {errorMsg && (
             <div className="bg-red-950/45 border border-red-500/50 text-red-200 p-4 rounded-lg flex items-center gap-3 font-sans text-sm">
@@ -453,9 +515,10 @@ export default function RegistrationForm() {
                 </label>
                 <input
                   type="text"
+                  disabled={isFormDisabled}
                   {...register('teamName', { required: 'Team Name is required' })}
-                  placeholder="Your answer"
-                  className={`w-full form-input ${errors.teamName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                  placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
+                  className={`w-full form-input ${errors.teamName ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                 />
                 {errors.teamName && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
@@ -471,9 +534,10 @@ export default function RegistrationForm() {
                 </label>
                 <input
                   type="text"
+                  disabled={isFormDisabled}
                   {...register('teamLeaderName', { required: 'Team Leader Name is required' })}
-                  placeholder="Your answer"
-                  className={`w-full form-input ${errors.teamLeaderName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                  placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
+                  className={`w-full form-input ${errors.teamLeaderName ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                 />
                 {errors.teamLeaderName && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
@@ -489,9 +553,10 @@ export default function RegistrationForm() {
                 </label>
                 <input
                   type="text"
+                  disabled={isFormDisabled}
                   {...register('teamLeaderUID', { required: 'Free Fire UID is required' })}
-                  placeholder="Your answer"
-                  className={`w-full form-input ${errors.teamLeaderUID ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                  placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
+                  className={`w-full form-input ${errors.teamLeaderUID ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                 />
                 {errors.teamLeaderUID && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
@@ -507,9 +572,10 @@ export default function RegistrationForm() {
                 </label>
                 <input
                   type="text"
+                  disabled={isFormDisabled}
                   {...register('discordUsername', { required: 'Discord Username is required' })}
-                  placeholder="Your answer"
-                  className={`w-full form-input ${errors.discordUsername ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                  placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
+                  className={`w-full form-input ${errors.discordUsername ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                 />
                 {errors.discordUsername && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
@@ -564,9 +630,10 @@ export default function RegistrationForm() {
                       </label>
                       <input
                         type="text"
+                        disabled={isFormDisabled}
                         {...register(`players.${index}.playerName`, { required: (index < 4 || isP5Active) ? 'Name In-Game is required' : false })}
-                        placeholder="Your answer"
-                        className={`w-full form-input-sm ${errors.players?.[index]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                        placeholder={isFormDisabled ? 'Closed' : 'Your answer'}
+                        className={`w-full form-input-sm ${errors.players?.[index]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                       />
                       {errors.players?.[index]?.playerName && (
                         <p className="text-red-500 text-[10px] mt-1 font-sans">Required</p>
@@ -580,9 +647,10 @@ export default function RegistrationForm() {
                       </label>
                       <input
                         type="text"
+                        disabled={isFormDisabled}
                         {...register(`players.${index}.playerUID`, { required: (index < 4 || isP5Active) ? 'Player ID is required' : false })}
-                        placeholder="Your answer"
-                        className={`w-full form-input-sm ${errors.players?.[index]?.playerUID ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                        placeholder={isFormDisabled ? 'Closed' : 'Your answer'}
+                        className={`w-full form-input-sm ${errors.players?.[index]?.playerUID ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                       />
                       {errors.players?.[index]?.playerUID && (
                         <p className="text-red-500 text-[10px] mt-1 font-sans">Required</p>
@@ -595,8 +663,9 @@ export default function RegistrationForm() {
                         Player Role
                       </label>
                       <select
+                        disabled={isFormDisabled}
                         {...register(`players.${index}.role`, { required: (index < 4 || isP5Active) ? 'Role is required' : false })}
-                        className={`w-full form-input-sm cursor-pointer ${errors.players?.[index]?.role ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                        className={`w-full form-input-sm cursor-pointer ${errors.players?.[index]?.role ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                       >
                         <option value="">Select Role</option>
                         <option value="IGL">IGL</option>
@@ -687,10 +756,11 @@ export default function RegistrationForm() {
                             <div className="flex-grow flex items-center gap-1.5">
                               <input
                                 type="text"
+                                disabled={isFormDisabled}
                                 value={playerName}
                                 onChange={(e) => setValue(`players.${idx}.playerName`, e.target.value, { shouldValidate: true })}
-                                placeholder={`Player ${idx + 1} Name`}
-                                className={`form-input-sm !py-1 !px-2 ${errors.players?.[idx]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                                placeholder={isFormDisabled ? 'Closed' : `Player ${idx + 1} Name`}
+                                className={`form-input-sm !py-1 !px-2 ${errors.players?.[idx]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                               />
                               {playerRole && (
                                 <span className="text-[9px] bg-slate-800 text-gold border border-gold/15 px-1.5 py-0.5 rounded font-mono shrink-0">
@@ -708,8 +778,9 @@ export default function RegistrationForm() {
                                 </div>
                                 <button
                                   type="button"
+                                  disabled={isFormDisabled}
                                   onClick={() => removeSlotFile(idx, 'youtube')}
-                                  className="p-1 bg-red-600 hover:bg-red-500 text-white rounded cursor-pointer transition-colors"
+                                  className={`p-1 bg-red-600 hover:bg-red-500 text-white rounded cursor-pointer transition-colors ${isFormDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                                   title="Remove File"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -723,7 +794,7 @@ export default function RegistrationForm() {
                                 <label
                                   htmlFor={`yt-file-${idx}`}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded border transition-all ${
-                                    isReady
+                                    isReady && !isFormDisabled
                                       ? 'bg-slate-800 hover:bg-slate-700 border-slate-650 text-white cursor-pointer'
                                       : 'bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed pointer-events-none'
                                   }`}
@@ -736,7 +807,7 @@ export default function RegistrationForm() {
                                   accept="image/*"
                                   onChange={(e) => handleSlotFileChange(e, idx, 'youtube')}
                                   className="hidden"
-                                  disabled={!isReady}
+                                  disabled={!isReady || isFormDisabled}
                                 />
                               </div>
                             )}
@@ -808,10 +879,11 @@ export default function RegistrationForm() {
                             <div className="flex-grow flex items-center gap-1.5">
                               <input
                                 type="text"
+                                disabled={isFormDisabled}
                                 value={playerName}
                                 onChange={(e) => setValue(`players.${idx}.playerName`, e.target.value, { shouldValidate: true })}
-                                placeholder={`Player ${idx + 1} Name`}
-                                className={`form-input-sm !py-1 !px-2 ${errors.players?.[idx]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
+                                placeholder={isFormDisabled ? 'Closed' : `Player ${idx + 1} Name`}
+                                className={`form-input-sm !py-1 !px-2 ${errors.players?.[idx]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                               />
                               {playerRole && (
                                 <span className="text-[9px] bg-slate-800 text-gold border border-gold/15 px-1.5 py-0.5 rounded font-mono shrink-0">
@@ -829,8 +901,9 @@ export default function RegistrationForm() {
                                 </div>
                                 <button
                                   type="button"
+                                  disabled={isFormDisabled}
                                   onClick={() => removeSlotFile(idx, 'instagram')}
-                                  className="p-1 bg-red-600 hover:bg-red-500 text-white rounded cursor-pointer transition-colors"
+                                  className={`p-1 bg-red-600 hover:bg-red-500 text-white rounded cursor-pointer transition-colors ${isFormDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                                   title="Remove File"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -844,7 +917,7 @@ export default function RegistrationForm() {
                                 <label
                                   htmlFor={`ig-file-${idx}`}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded border transition-all ${
-                                    isReady
+                                    isReady && !isFormDisabled
                                       ? 'bg-slate-800 hover:bg-slate-700 border-slate-650 text-white cursor-pointer'
                                       : 'bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed pointer-events-none'
                                   }`}
@@ -857,7 +930,7 @@ export default function RegistrationForm() {
                                   accept="image/*"
                                   onChange={(e) => handleSlotFileChange(e, idx, 'instagram')}
                                   className="hidden"
-                                  disabled={!isReady}
+                                  disabled={!isReady || isFormDisabled}
                                 />
                               </div>
                             )}
@@ -895,17 +968,22 @@ export default function RegistrationForm() {
                   {...register('termsAccepted', { required: 'You must accept the terms and conditions' })}
                   className="sr-only peer"
                   id="terms-check"
+                  disabled={isFormDisabled}
                 />
                 <label
                   htmlFor="terms-check"
-                  className={`w-5 h-5 bg-[#0b0c10] border-2 rounded flex items-center justify-center transition-all cursor-pointer ${
-                    watchTerms ? 'border-[#FFD700] bg-black shadow-[0_0_10px_rgba(255,215,0,0.6)]' : 'border-slate-700 hover:border-slate-600'
+                  className={`w-5 h-5 bg-[#0b0c10] border-2 rounded flex items-center justify-center transition-all ${
+                    isFormDisabled ? 'border-slate-800 cursor-not-allowed opacity-55' : 'cursor-pointer'
+                  } ${
+                    watchTerms && !isFormDisabled ? 'border-[#FFD700] bg-black shadow-[0_0_10px_rgba(255,215,0,0.6)]' : 'border-slate-700 hover:border-slate-600'
                   }`}
                 >
-                  {watchTerms && <Check className="w-3.5 h-3.5 text-[#FFD700] font-black stroke-[4]" />}
+                  {watchTerms && !isFormDisabled && <Check className="w-3.5 h-3.5 text-[#FFD700] font-black stroke-[4]" />}
                 </label>
               </div>
-              <label htmlFor="terms-check" className="text-xs md:text-sm text-gray-400 hover:text-gray-300 transition-colors cursor-pointer leading-relaxed">
+              <label htmlFor="terms-check" className={`text-xs md:text-sm transition-colors leading-relaxed ${
+                isFormDisabled ? 'text-gray-500 cursor-not-allowed' : 'text-gray-400 hover:text-gray-300 cursor-pointer'
+              }`}>
                 I agree to all the rules and regulations of The Shield Showdown. All details provided are correct and my team is ready to participate.
               </label>
             </div>
@@ -919,7 +997,7 @@ export default function RegistrationForm() {
           {/* SUBMIT BUTTON */}
           <div className="flex flex-col items-center pt-4">
             {/* Submit Requirements State message */}
-            {!allProofsUploaded && !loading && (
+            {!allProofsUploaded && !loading && !isFormDisabled && (
               <p className="text-gray-500 text-[10px] md:text-xs font-gaming uppercase tracking-wide text-center mb-4 leading-relaxed max-w-md animate-pulse">
                 <span className="text-gold-bright font-black">Upload Proof Status:</span> YouTube ({activeYtFiles.filter(Boolean).length}/{requiredCount}) &bull; Instagram ({activeIgFiles.filter(Boolean).length}/{requiredCount})<br />
                 <span className="text-red-400 text-[9px] lowercase">(please upload follow screenshots for all team members before submitting)</span>
@@ -931,7 +1009,7 @@ export default function RegistrationForm() {
               disabled={isSubmitDisabled}
               className={`w-full max-w-sm font-gaming font-black text-white uppercase text-sm md:text-base tracking-widest py-3 px-8 rounded shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group ${
                 isSubmitDisabled
-                  ? 'bg-gray-700 text-gray-400 border border-gray-600 opacity-45 cursor-not-allowed'
+                  ? 'bg-gray-750 text-gray-500 border border-gray-800 opacity-45 cursor-not-allowed'
                   : 'bg-gold-gradient hover:brightness-110 shadow-gold-glow hover:shadow-gold-glow-btn cursor-pointer transform hover:-translate-y-0.5'
               }`}
             >
@@ -940,6 +1018,8 @@ export default function RegistrationForm() {
                   <RefreshCw className="w-5 h-5 text-white animate-spin" />
                   Submitting...
                 </>
+              ) : isFormDisabled ? (
+                'REGISTRATION CLOSED'
               ) : (
                 'SUBMIT'
               )}
@@ -952,6 +1032,93 @@ export default function RegistrationForm() {
             </p>
           </div>
         </form>
+      </div>
+
+      {/* Right: Sidebar Countdown & Guide Widget */}
+      <div className="w-full lg:w-1/4 space-y-6 lg:sticky lg:top-8 order-1 lg:order-2">
+        {/* TIMER CARD */}
+        {timerConfig.isEnabled && (
+          <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/25 rounded-xl p-5 md:p-6 shadow-2xl relative overflow-hidden font-sans">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient" />
+            <h3 className="font-gaming font-bold text-xs text-gold-bright uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gold-bright" /> {timerConfig.title || 'Registration Closes In'}
+            </h3>
+
+            {isExpired ? (
+              <div className="text-center py-4 bg-red-950/15 border border-red-500/30 rounded-lg">
+                <span className="font-gaming font-black text-xl text-red-500 tracking-wider uppercase">CLOSED</span>
+                <p className="text-[10px] text-gray-400 font-sans mt-1">Registrations are closed.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
+                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.days}</span>
+                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Days</span>
+                  </div>
+                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
+                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.hours}</span>
+                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Hours</span>
+                  </div>
+                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
+                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.minutes}</span>
+                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Min</span>
+                  </div>
+                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
+                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.seconds}</span>
+                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Sec</span>
+                  </div>
+                </div>
+                <div className="text-[10px] text-gray-400 text-center font-sans">
+                  Deadline: {new Date(timerConfig.targetDate).toLocaleString()}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* INSTRUCTIONS CARD */}
+        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-5 shadow-2xl relative overflow-hidden font-sans">
+          <h3 className="font-gaming font-bold text-xs text-white uppercase tracking-wider mb-4 border-b border-gold/10 pb-2">
+            REGISTRATION GUIDE
+          </h3>
+          <ul className="text-xs text-gray-400 space-y-3 list-none pl-0">
+            <li className="flex gap-2">
+              <span className="text-gold-bright font-gaming font-black">01.</span>
+              <span>Input your Team Name, Leader Name, Leader UID and Discord.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-gold-bright font-gaming font-black">02.</span>
+              <span>Provide information for at least 4 squad members (Player 5 is optional).</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-gold-bright font-gaming font-black">03.</span>
+              <span>Upload social screenshots verifying subscription/follows for each player.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-gold-bright font-gaming font-black">04.</span>
+              <span>Check "Agree" to the terms, click Submit and wait for redirect.</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* JOIN DISCORD CARD */}
+        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-5 shadow-2xl text-center relative overflow-hidden font-sans">
+          <h4 className="font-gaming font-black text-xs text-gold-bright uppercase tracking-wider mb-2">
+            GLORY AWAITS
+          </h4>
+          <p className="text-[11px] text-gray-400 mb-4 font-sans leading-relaxed">
+            Need support or have tournament questions? Connect with our administration team directly.
+          </p>
+          <a
+            href="https://discord.gg/MK7eQZayxd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] font-gaming text-white font-bold text-xs tracking-wider rounded transition-all cursor-pointer shadow-md"
+          >
+            Join Discord Community
+          </a>
+        </div>
       </div>
     </div>
   );
