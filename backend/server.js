@@ -10,23 +10,8 @@ const app = express();
 // Connect to MongoDB Database
 connectDB();
 
-// CORS configuration - dynamically allow Vercel domains and local frontend
-const allowedOrigins = ['http://localhost:5173'];
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+// CORS - open to all origins (public registration API)
+app.use(cors());
 
 // Express Middlewares
 app.use(express.json());
