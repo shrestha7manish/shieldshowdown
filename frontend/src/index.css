@@ -40,6 +40,7 @@
   border: 1px solid rgba(255, 215, 0, 0.7);
 }
 
+.bg-gold-gradient,
 .gold-gradient {
   background: linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #aa8c2c 100%);
 }

@@ -7,7 +7,9 @@ import 'jspdf-autotable';
 import { LayoutDashboard, Users, Calendar, Search, Download, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return sessionStorage.getItem('admin_logged_in') === 'true';
+  });
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -16,6 +18,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (loginUser === 'admin' && loginPass === 'admin123') {
       setIsLoggedIn(true);
+      sessionStorage.setItem('admin_logged_in', 'true');
       setLoginError('');
     } else {
       setLoginError('Invalid username or password.');
@@ -344,6 +347,15 @@ export default function AdminDashboard() {
           >
             Registration Form
           </Link>
+          <button
+            onClick={() => {
+              setIsLoggedIn(false);
+              sessionStorage.removeItem('admin_logged_in');
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-red-600 hover:bg-red-500 rounded font-bold transition-all cursor-pointer shadow-lg"
+          >
+            Logout
+          </button>
         </div>
       </div>
 
