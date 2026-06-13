@@ -30,9 +30,22 @@ export default function RegistrationForm() {
   const [igFiles, setIgFiles] = useState([null, null, null, null, null]);
   const [igPreviews, setIgPreviews] = useState([null, null, null, null, null]);
 
+  const [countdown, setCountdown] = useState(4);
+
   // React Hook Form
-  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
-    defaultValues: {
+  const getSavedValues = () => {
+    try {
+      const saved = localStorage.getItem('shield_showdown_reg_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Error reading from localStorage:", e);
+    }
+    return {
       teamName: '',
       teamLeaderName: '',
       teamLeaderUID: '',
@@ -45,7 +58,11 @@ export default function RegistrationForm() {
         { playerName: '', playerUID: '', role: '' }
       ],
       termsAccepted: false
-    }
+    };
+  };
+
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
+    defaultValues: getSavedValues()
   });
 
   // Dynamically watch 5th player inputs to determine required count
@@ -59,6 +76,41 @@ export default function RegistrationForm() {
 
   const requiredCount = isP5Active ? 5 : 4;
   const watchTerms = watch('termsAccepted');
+
+  const formValues = watch();
+
+  // Persist form data on reload
+  useEffect(() => {
+    if (formValues) {
+      localStorage.setItem('shield_showdown_reg_data', JSON.stringify(formValues));
+    }
+  }, [formValues]);
+
+  // Clean 5th player upload slot files if player 5 details are cleared
+  useEffect(() => {
+    if (!isP5Active) {
+      setYtFiles(prev => {
+        const next = [...prev];
+        next[4] = null;
+        return next;
+      });
+      setYtPreviews(prev => {
+        const next = [...prev];
+        next[4] = null;
+        return next;
+      });
+      setIgFiles(prev => {
+        const next = [...prev];
+        next[4] = null;
+        return next;
+      });
+      setIgPreviews(prev => {
+        const next = [...prev];
+        next[4] = null;
+        return next;
+      });
+    }
+  }, [isP5Active]);
 
   const handleSlotFileChange = (e, idx, type) => {
     const file = e.target.files[0];
@@ -172,11 +224,26 @@ export default function RegistrationForm() {
           registrationId: response.data.registrationId,
           teamName: response.data.data.teamName
         });
-        reset();
+        localStorage.removeItem('shield_showdown_reg_data');
+        reset({
+          teamName: '',
+          teamLeaderName: '',
+          teamLeaderUID: '',
+          discordUsername: '',
+          players: [
+            { playerName: '', playerUID: '', role: '' },
+            { playerName: '', playerUID: '', role: '' },
+            { playerName: '', playerUID: '', role: '' },
+            { playerName: '', playerUID: '', role: '' },
+            { playerName: '', playerUID: '', role: '' }
+          ],
+          termsAccepted: false
+        });
         setYtFiles([null, null, null, null, null]);
         setYtPreviews([null, null, null, null, null]);
         setIgFiles([null, null, null, null, null]);
         setIgPreviews([null, null, null, null, null]);
+        setCountdown(4);
       }
     } catch (err) {
       console.error(err);
@@ -196,6 +263,22 @@ export default function RegistrationForm() {
   const activeIgFiles = igFiles.slice(0, requiredCount);
   const isSubmitDisabled = activeYtFiles.some(f => !f) || activeIgFiles.some(f => !f) || loading;
 
+  useEffect(() => {
+    if (successData) {
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            window.location.href = "https://discord.gg/MK7eQZayxd";
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [successData]);
+
   if (successData) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center">
@@ -206,8 +289,11 @@ export default function RegistrationForm() {
         <h1 className="font-gaming font-black text-3xl md:text-5xl text-white tracking-wider mb-2 uppercase italic">
           REGISTRATION <span className="text-gold-bright font-black">SUBMITTED</span>
         </h1>
-        <p className="text-gray-400 font-sans text-base md:text-lg mb-8">
+        <p className="text-gray-400 font-sans text-base md:text-lg mb-2">
           Registration Submitted Successfully. Glory Awaits Your Team!
+        </p>
+        <p className="text-gold-bright font-sans text-sm mb-8 animate-pulse">
+          Diverting to Discord in <span className="font-bold font-gaming">{countdown}</span> seconds...
         </p>
 
         <div className="bg-[#121214] border-2 border-gold/40 rounded-xl p-8 max-w-md mx-auto mb-10 shadow-gold-glow">
@@ -221,12 +307,27 @@ export default function RegistrationForm() {
           </div>
         </div>
 
-        <button
-          onClick={() => setSuccessData(null)}
-          className="px-8 py-3 bg-gold-gradient hover:brightness-110 font-gaming text-white font-bold tracking-wider rounded transition-all duration-300 shadow-gold-glow-btn transform hover:-translate-y-0.5 cursor-pointer"
-        >
-          Register Another Team
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a
+            href="https://discord.gg/MK7eQZayxd"
+            className="px-8 py-3 bg-[#5865F2] hover:bg-[#4752C4] font-gaming text-white font-bold tracking-wider rounded transition-all duration-300 shadow-[0_0_15px_rgba(88,101,242,0.4)] transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 127.14 96.36">
+              <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.89-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,72.9,0c.82.71,1.69,1.4,2.58,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,48.12,122.56,25.29,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.9,46,53.72,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.14,46,96,53,91,65.69,84.69,65.69Z"/>
+            </svg>
+            Join Discord
+          </a>
+
+          <button
+            onClick={() => {
+              setSuccessData(null);
+              setCountdown(4);
+            }}
+            className="px-8 py-3 bg-slate-800 hover:bg-slate-700 font-gaming text-white font-bold tracking-wider rounded transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
+          >
+            Register Another Team
+          </button>
+        </div>
       </div>
     );
   }
@@ -483,14 +584,17 @@ export default function RegistrationForm() {
 
                   {/* Individual Upload Fields Grid */}
                   <div className="space-y-3">
-                    {[...Array(5)].map((_, idx) => {
+                    {[...Array(requiredCount)].map((_, idx) => {
                       const file = ytFiles[idx];
                       const preview = ytPreviews[idx];
                       const playerName = watch(`players.${idx}.playerName`) || "";
                       const playerRole = watch(`players.${idx}.role`) || "";
+                      const isReady = watch(`players.${idx}.playerName`)?.trim() &&
+                                      watch(`players.${idx}.playerUID`)?.trim() &&
+                                      watch(`players.${idx}.role`);
 
                       return (
-                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
                           <div className="flex items-center gap-2 flex-grow min-w-0">
                             <User className="w-4 h-4 text-gold-bright shrink-0" />
                             <div className="flex-grow flex items-center gap-1.5">
@@ -531,7 +635,11 @@ export default function RegistrationForm() {
                               <div>
                                 <label
                                   htmlFor={`yt-file-${idx}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-650 text-white rounded text-[11px] font-bold cursor-pointer transition-all"
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded border transition-all ${
+                                    isReady
+                                      ? 'bg-slate-800 hover:bg-slate-700 border-slate-650 text-white cursor-pointer'
+                                      : 'bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed pointer-events-none'
+                                  }`}
                                 >
                                   <Upload className="w-3 h-3" /> Upload
                                 </label>
@@ -541,6 +649,7 @@ export default function RegistrationForm() {
                                   accept="image/*"
                                   onChange={(e) => handleSlotFileChange(e, idx, 'youtube')}
                                   className="hidden"
+                                  disabled={!isReady}
                                 />
                               </div>
                             )}
@@ -588,14 +697,17 @@ export default function RegistrationForm() {
 
                   {/* Individual Upload Fields Grid */}
                   <div className="space-y-3">
-                    {[...Array(5)].map((_, idx) => {
+                    {[...Array(requiredCount)].map((_, idx) => {
                       const file = igFiles[idx];
                       const preview = igPreviews[idx];
                       const playerName = watch(`players.${idx}.playerName`) || "";
                       const playerRole = watch(`players.${idx}.role`) || "";
+                      const isReady = watch(`players.${idx}.playerName`)?.trim() &&
+                                      watch(`players.${idx}.playerUID`)?.trim() &&
+                                      watch(`players.${idx}.role`);
 
                       return (
-                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
                           <div className="flex items-center gap-2 flex-grow min-w-0">
                             <User className="w-4 h-4 text-gold-bright shrink-0" />
                             <div className="flex-grow flex items-center gap-1.5">
@@ -636,7 +748,11 @@ export default function RegistrationForm() {
                               <div>
                                 <label
                                   htmlFor={`ig-file-${idx}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-650 text-white rounded text-[11px] font-bold cursor-pointer transition-all"
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded border transition-all ${
+                                    isReady
+                                      ? 'bg-slate-800 hover:bg-slate-700 border-slate-650 text-white cursor-pointer'
+                                      : 'bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed pointer-events-none'
+                                  }`}
                                 >
                                   <Upload className="w-3 h-3" /> Upload
                                 </label>
@@ -646,6 +762,7 @@ export default function RegistrationForm() {
                                   accept="image/*"
                                   onChange={(e) => handleSlotFileChange(e, idx, 'instagram')}
                                   className="hidden"
+                                  disabled={!isReady}
                                 />
                               </div>
                             )}
