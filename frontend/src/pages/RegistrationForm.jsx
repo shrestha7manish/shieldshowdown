@@ -463,9 +463,9 @@ export default function RegistrationForm() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row items-start gap-6">
-      {/* Left: Main Form Card */}
-      <div className="w-full lg:w-3/4 bg-[#060608]/75 backdrop-blur-md border-2 border-gold/40 rounded-xl overflow-hidden shadow-2xl order-2 lg:order-1">
+    <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col items-center gap-6">
+      {/* Main Form Card */}
+      <div className="w-full bg-[#060608]/75 backdrop-blur-md border-2 border-gold/40 rounded-xl overflow-hidden shadow-2xl">
         
         {/* HEADER SECTION (Banner Image Match) */}
         <div className="relative border-b border-gold/25 overflow-hidden">
@@ -475,6 +475,47 @@ export default function RegistrationForm() {
             className="w-full h-auto block object-cover" 
           />
         </div>
+
+        {/* TIMER BAR (If enabled) */}
+        {timerConfig.isEnabled && (
+          <div className="border-b border-gold/20 bg-black/40 p-5 font-sans relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <h3 className="font-gaming font-bold text-xs text-gold-bright uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gold-bright" /> {timerConfig.title || 'Registration Closes In'}
+              </h3>
+
+              {isExpired ? (
+                <div className="px-4 py-1.5 bg-red-950/20 border border-red-500/30 rounded text-red-500 font-gaming font-black text-xs tracking-wider uppercase">
+                  CLOSED
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="grid grid-cols-4 gap-2 text-center min-w-[220px]">
+                    <div className="bg-[#121214] border border-gold/15 rounded p-2 min-w-[50px]">
+                      <span className="block font-gaming font-black text-lg text-gold-bright leading-none">{timeLeft.days}</span>
+                      <span className="text-[7px] uppercase tracking-wider text-gray-500">Days</span>
+                    </div>
+                    <div className="bg-[#121214] border border-gold/15 rounded p-2 min-w-[50px]">
+                      <span className="block font-gaming font-black text-lg text-gold-bright leading-none">{timeLeft.hours}</span>
+                      <span className="text-[7px] uppercase tracking-wider text-gray-500">Hours</span>
+                    </div>
+                    <div className="bg-[#121214] border border-gold/15 rounded p-2 min-w-[50px]">
+                      <span className="block font-gaming font-black text-lg text-gold-bright leading-none">{timeLeft.minutes}</span>
+                      <span className="text-[7px] uppercase tracking-wider text-gray-500">Min</span>
+                    </div>
+                    <div className="bg-[#121214] border border-gold/15 rounded p-2 min-w-[50px]">
+                      <span className="block font-gaming font-black text-lg text-gold-bright leading-none">{timeLeft.seconds}</span>
+                      <span className="text-[7px] uppercase tracking-wider text-gray-500">Sec</span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-sans font-mono whitespace-nowrap">
+                    Deadline: {new Date(timerConfig.targetDate).toLocaleString()}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* FORM FIELDS */}
         <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="p-6 md:p-10 space-y-10">
@@ -1007,10 +1048,10 @@ export default function RegistrationForm() {
             <button
               type="submit"
               disabled={isSubmitDisabled}
-              className={`w-full max-w-sm font-gaming font-black text-white uppercase text-sm md:text-base tracking-widest py-3 px-8 rounded shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group ${
+              className={`w-full max-w-sm font-gaming font-black text-white uppercase text-sm md:text-base tracking-widest py-3 px-8 rounded transition-all duration-300 flex items-center justify-center gap-2 group ${
                 isSubmitDisabled
                   ? 'bg-gray-750 text-gray-500 border border-gray-800 opacity-45 cursor-not-allowed'
-                  : 'bg-gold-gradient hover:brightness-110 shadow-gold-glow hover:shadow-gold-glow-btn cursor-pointer transform hover:-translate-y-0.5'
+                  : 'bg-gold-gradient hover:brightness-110 cursor-pointer transform hover:-translate-y-0.5'
               }`}
             >
               {loading ? (
@@ -1024,61 +1065,14 @@ export default function RegistrationForm() {
                 'SUBMIT'
               )}
             </button>
-
-            {/* Footer text */}
-            <p className="text-gray-500 text-[10px] font-sans text-center mt-6 tracking-wide">
-              Never give out your password.<br />
-              This form was created inside <span className="underline hover:text-gold cursor-pointer">The Shield Showdown</span>. <span className="underline hover:text-gold cursor-pointer">Report Abuse</span>
-            </p>
           </div>
         </form>
       </div>
 
-      {/* Right: Sidebar Countdown & Guide Widget */}
-      <div className="w-full lg:w-1/4 space-y-6 lg:sticky lg:top-8 order-1 lg:order-2">
-        {/* TIMER CARD */}
-        {timerConfig.isEnabled && (
-          <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/25 rounded-xl p-5 md:p-6 shadow-2xl relative overflow-hidden font-sans">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient" />
-            <h3 className="font-gaming font-bold text-xs text-gold-bright uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gold-bright" /> {timerConfig.title || 'Registration Closes In'}
-            </h3>
-
-            {isExpired ? (
-              <div className="text-center py-4 bg-red-950/15 border border-red-500/30 rounded-lg">
-                <span className="font-gaming font-black text-xl text-red-500 tracking-wider uppercase">CLOSED</span>
-                <p className="text-[10px] text-gray-400 font-sans mt-1">Registrations are closed.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
-                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.days}</span>
-                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Days</span>
-                  </div>
-                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
-                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.hours}</span>
-                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Hours</span>
-                  </div>
-                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
-                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.minutes}</span>
-                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Min</span>
-                  </div>
-                  <div className="bg-[#121214] border border-gold/15 rounded p-2">
-                    <span className="block font-gaming font-black text-xl text-gold-bright">{timeLeft.seconds}</span>
-                    <span className="text-[8px] uppercase tracking-wider text-gray-505">Sec</span>
-                  </div>
-                </div>
-                <div className="text-[10px] text-gray-400 text-center font-sans">
-                  Deadline: {new Date(timerConfig.targetDate).toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
+      {/* Bottom widgets row */}
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* INSTRUCTIONS CARD */}
-        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-5 shadow-2xl relative overflow-hidden font-sans">
+        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-6 shadow-2xl relative overflow-hidden font-sans">
           <h3 className="font-gaming font-bold text-xs text-white uppercase tracking-wider mb-4 border-b border-gold/10 pb-2">
             REGISTRATION GUIDE
           </h3>
@@ -1103,18 +1097,20 @@ export default function RegistrationForm() {
         </div>
 
         {/* JOIN DISCORD CARD */}
-        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-5 shadow-2xl text-center relative overflow-hidden font-sans">
-          <h4 className="font-gaming font-black text-xs text-gold-bright uppercase tracking-wider mb-2">
-            GLORY AWAITS
-          </h4>
-          <p className="text-[11px] text-gray-400 mb-4 font-sans leading-relaxed">
-            Need support or have tournament questions? Connect with our administration team directly.
-          </p>
+        <div className="bg-[#060608]/75 backdrop-blur-md border border-gold/20 rounded-xl p-6 shadow-2xl text-center flex flex-col justify-between relative overflow-hidden font-sans">
+          <div>
+            <h4 className="font-gaming font-black text-xs text-gold-bright uppercase tracking-wider mb-2">
+              GLORY AWAITS
+            </h4>
+            <p className="text-[11px] text-gray-400 mb-4 font-sans leading-relaxed">
+              Need support or have tournament questions? Connect with our administration team directly.
+            </p>
+          </div>
           <a
             href="https://discord.gg/MK7eQZayxd"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] font-gaming text-white font-bold text-xs tracking-wider rounded transition-all cursor-pointer shadow-md"
+            className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 bg-[#D4AF37] hover:bg-[#FFD700] font-gaming text-white font-bold text-xs tracking-wider rounded transition-all cursor-pointer shadow-md"
           >
             Join Discord Community
           </a>
