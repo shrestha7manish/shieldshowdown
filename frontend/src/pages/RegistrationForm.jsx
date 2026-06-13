@@ -197,12 +197,19 @@ export default function RegistrationForm() {
     setLoading(true);
 
     try {
+      // Clean players array: only include first 4 always, add 5th only if fully filled
+      let cleanPlayers = data.players.slice(0, 4);
+      const p5 = data.players[4];
+      if (p5 && p5.playerName?.trim() && p5.playerUID?.trim() && p5.role) {
+        cleanPlayers.push(p5);
+      }
+
       const formData = new FormData();
       formData.append('teamName', data.teamName);
       formData.append('teamLeaderName', data.teamLeaderName);
       formData.append('teamLeaderUID', data.teamLeaderUID);
       formData.append('discordUsername', data.discordUsername);
-      formData.append('players', JSON.stringify(data.players));
+      formData.append('players', JSON.stringify(cleanPlayers));
 
       // Append arrays of files to the correct fields
       activeYtFiles.forEach(file => {
@@ -246,8 +253,14 @@ export default function RegistrationForm() {
         setCountdown(4);
       }
     } catch (err) {
-      console.error(err);
-      setErrorMsg(err.response?.data?.message || 'Registration failed. Please check form fields.');
+      console.error('Registration error:', err);
+      const backendMsg = err.response?.data?.message;
+      const networkErr = err.code === 'ERR_NETWORK' || err.message === 'Network Error';
+      if (networkErr) {
+        setErrorMsg('Network error: Cannot reach the server. Please check your internet connection and try again.');
+      } else {
+        setErrorMsg(backendMsg || `Server error (${err.response?.status || 'unknown'}). Please try again.`);
+      }
     } finally {
       setLoading(false);
     }
