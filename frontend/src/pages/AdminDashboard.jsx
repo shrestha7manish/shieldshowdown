@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import { LayoutDashboard, Users, Calendar, Search, Download, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Search, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -14,7 +11,7 @@ export default function AdminDashboard() {
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  const handleLoginSubmit = (e) => {
+  function handleLoginSubmit(e) {
     e.preventDefault();
     if (loginUser === 'admin' && loginPass === 'admin123') {
       setIsLoggedIn(true);
@@ -61,7 +58,7 @@ export default function AdminDashboard() {
   }, [search, isLoggedIn]);
 
 
-  const fetchTimerSettings = async () => {
+  async function fetchTimerSettings() {
     try {
       const response = await axios.get(`${API_BASE_URL}/settings/timer`);
       if (response.data && response.data.value) {
@@ -82,7 +79,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSaveTimerSettings = async (e) => {
+  async function handleSaveTimerSettings(e) {
     e.preventDefault();
     setTimerSaving(true);
     setTimerMessage({ text: '', type: '' });
@@ -108,7 +105,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchStats = async () => {
+  async function fetchStats() {
     try {
       const response = await axios.get(`${API_BASE_URL}/registrations/stats`);
       setStats(response.data);
@@ -117,7 +114,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchRegistrations = async () => {
+  async function fetchRegistrations() {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/registrations`, {
@@ -132,11 +129,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteClick = (id) => {
+  function handleDeleteClick(id) {
     setDeleteId(id);
   };
 
-  const confirmDelete = async () => {
+  async function confirmDelete() {
     if (!deleteId) return;
     try {
       await axios.delete(`${API_BASE_URL}/registrations/${deleteId}`);
@@ -149,102 +146,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Excel Export
-  const exportToExcel = () => {
-    if (registrations.length === 0) return;
 
-    const exportData = registrations.map((reg) => {
-      const row = {
-        'Registration ID': reg.registrationId,
-        'Team Name': reg.teamName,
-        'Team Leader': reg.teamLeaderName,
-        'Leader UID': reg.teamLeaderUID,
-        'Discord Username': reg.discordUsername,
-        'Submission Date': new Date(reg.submittedAt).toLocaleString(),
-      };
-
-      // Map player columns
-      reg.players.forEach((p, idx) => {
-        row[`Player ${idx + 1} Name`] = p.playerName;
-        row[`Player ${idx + 1} UID`] = p.playerUID;
-        row[`Player ${idx + 1} Role`] = p.role;
-      });
-
-      return row;
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
-
-    // Autofilter and auto-column width
-    const max_len = exportData.reduce((acc, row) => {
-      Object.keys(row).forEach((key, idx) => {
-        const val = row[key] ? row[key].toString() : '';
-        acc[idx] = Math.max(acc[idx] || 0, val.length, key.length);
-      });
-      return acc;
-    }, []);
-    worksheet['!cols'] = max_len.map(w => ({ w: w + 2 }));
-
-    XLSX.writeFile(workbook, `TSS_Tournament_Registrations_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  };
-
-  // PDF Export
-  const exportToPDF = () => {
-    if (registrations.length === 0) return;
-
-    const doc = new jsPDF();
-    
-    // Add title banner design
-    doc.setFillColor(15, 15, 18);
-    doc.rect(0, 0, 220, 40, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(212, 175, 55); // Gold
-    doc.setFontSize(22);
-    doc.text('THE SHIELD SHOWDOWN', 14, 20);
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text('OFFICIAL TOURNAMENT REGISTRATION LIST', 14, 28);
-
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.text(`Report Generated: ${new Date().toLocaleString()}`, 14, 35);
-
-    // Summary box
-    doc.setFillColor(245, 245, 248);
-    doc.rect(14, 45, 182, 18, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text(`Total Registrations: ${stats.totalRegistrations}`, 20, 56);
-    doc.text(`Registered Today: ${stats.registrationsToday}`, 85, 56);
-    doc.text(`Unique Teams: ${stats.totalTeams}`, 150, 56);
-
-    const headers = [['Reg ID', 'Team Name', 'Team Leader', 'Discord Username', 'Submission Date']];
-    const data = registrations.map((reg) => [
-      reg.registrationId,
-      reg.teamName,
-      reg.teamLeaderName,
-      reg.discordUsername,
-      new Date(reg.submittedAt).toLocaleDateString()
-    ]);
-
-    doc.autoTable({
-      head: headers,
-      body: data,
-      startY: 70,
-      theme: 'grid',
-      headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0], fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 3 },
-      alternateRowStyles: { fillColor: [250, 250, 252] },
-      margin: { top: 70 }
-    });
-
-    doc.save(`TSS_Tournament_Registrations_${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
 
   // Login View Wrapper
   if (!isLoggedIn) {
@@ -327,20 +229,7 @@ export default function AdminDashboard() {
 
         {/* Exports & Logout Buttons */}
         <div className="flex flex-wrap gap-3">
-          <button
-            onClick={exportToExcel}
-            disabled={registrations.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 font-bold rounded transition-all cursor-pointer shadow-lg"
-          >
-            <Download className="w-4 h-4" /> Export Excel
-          </button>
-          <button
-            onClick={exportToPDF}
-            disabled={registrations.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-gold-gradient hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 font-bold rounded transition-all cursor-pointer shadow-lg shadow-gold-glow"
-          >
-            <Download className="w-4 h-4" /> Export PDF
-          </button>
+
           <Link
             to="/"
             className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded font-bold transition-all cursor-pointer shadow-lg"
