@@ -31,6 +31,7 @@ export default function RegistrationForm() {
   const [igPreviews, setIgPreviews] = useState([null, null, null, null, null]);
 
   const [countdown, setCountdown] = useState(4);
+  const [showUploadErrors, setShowUploadErrors] = useState(false);
 
   // React Hook Form
   const getSavedValues = () => {
@@ -183,14 +184,76 @@ export default function RegistrationForm() {
     }
   };
 
+  const formFieldOrder = [
+    'teamName',
+    'teamLeaderName',
+    'teamLeaderUID',
+    'discordUsername',
+    ...[0, 1, 2, 3, 4].flatMap(idx => [
+      `players.${idx}.playerName`,
+      `players.${idx}.playerUID`,
+      `players.${idx}.role`
+    ]),
+    'termsAccepted'
+  ];
+
+  const getNestedError = (errors, path) => {
+    const parts = path.split('.');
+    let current = errors;
+    for (const part of parts) {
+      if (!current) return undefined;
+      current = current[part];
+    }
+    return current;
+  };
+
+  const scrollToFirstError = (errors) => {
+    for (const path of formFieldOrder) {
+      if (getNestedError(errors, path)) {
+        const element = document.querySelector(`[name="${path}"]`);
+        if (element) {
+          if (path === 'termsAccepted') {
+            const termsContainer = document.getElementById('terms-container');
+            if (termsContainer) {
+              termsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+          }
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          try {
+            element.focus({ preventScroll: true });
+          } catch (e) {
+            console.error(e);
+          }
+          return;
+        }
+      }
+    }
+  };
+
   const onSubmit = async (data) => {
     setErrorMsg('');
 
     const activeYtFiles = ytFiles.slice(0, requiredCount);
     const activeIgFiles = igFiles.slice(0, requiredCount);
 
-    if (activeYtFiles.some(f => !f) || activeIgFiles.some(f => !f)) {
+    const firstMissingYtIdx = activeYtFiles.findIndex(f => !f);
+    const firstMissingIgIdx = activeIgFiles.findIndex(f => !f);
+
+    if (firstMissingYtIdx !== -1 || firstMissingIgIdx !== -1) {
       setErrorMsg(`Please upload screenshot proofs for all ${requiredCount} team members.`);
+      setShowUploadErrors(true);
+
+      let elementToScroll = null;
+      if (firstMissingYtIdx !== -1) {
+        elementToScroll = document.getElementById(`yt-file-container-${firstMissingYtIdx}`);
+      } else if (firstMissingIgIdx !== -1) {
+        elementToScroll = document.getElementById(`ig-file-container-${firstMissingIgIdx}`);
+      }
+
+      if (elementToScroll) {
+        elementToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -251,6 +314,7 @@ export default function RegistrationForm() {
         setIgFiles([null, null, null, null, null]);
         setIgPreviews([null, null, null, null, null]);
         setCountdown(4);
+        setShowUploadErrors(false);
       }
     } catch (err) {
       console.error('Registration error:', err);
@@ -269,12 +333,14 @@ export default function RegistrationForm() {
   const onInvalidSubmit = (errors) => {
     console.error("Form Validation Errors:", errors);
     setErrorMsg("Form submission failed. Please fill out all required fields (highlighted in red) and accept the terms.");
+    scrollToFirstError(errors);
   };
 
-  // Submit button active state rule (based on sliced arrays matching dynamic squad size)
+  // Submit button active state rule
   const activeYtFiles = ytFiles.slice(0, requiredCount);
   const activeIgFiles = igFiles.slice(0, requiredCount);
-  const isSubmitDisabled = activeYtFiles.some(f => !f) || activeIgFiles.some(f => !f) || loading;
+  const isSubmitDisabled = loading;
+  const allProofsUploaded = activeYtFiles.every(Boolean) && activeIgFiles.every(Boolean);
 
   useEffect(() => {
     if (successData) {
@@ -498,7 +564,7 @@ export default function RegistrationForm() {
                       </label>
                       <input
                         type="text"
-                        {...register(`players.${index}.playerName`, { required: index < 4 ? 'Name In-Game is required' : false })}
+                        {...register(`players.${index}.playerName`, { required: (index < 4 || isP5Active) ? 'Name In-Game is required' : false })}
                         placeholder="Your answer"
                         className={`w-full form-input-sm ${errors.players?.[index]?.playerName ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
                       />
@@ -514,7 +580,7 @@ export default function RegistrationForm() {
                       </label>
                       <input
                         type="text"
-                        {...register(`players.${index}.playerUID`, { required: index < 4 ? 'Player ID is required' : false })}
+                        {...register(`players.${index}.playerUID`, { required: (index < 4 || isP5Active) ? 'Player ID is required' : false })}
                         placeholder="Your answer"
                         className={`w-full form-input-sm ${errors.players?.[index]?.playerUID ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
                       />
@@ -529,7 +595,7 @@ export default function RegistrationForm() {
                         Player Role
                       </label>
                       <select
-                        {...register(`players.${index}.role`, { required: index < 4 ? 'Role is required' : false })}
+                        {...register(`players.${index}.role`, { required: (index < 4 || isP5Active) ? 'Role is required' : false })}
                         className={`w-full form-input-sm cursor-pointer ${errors.players?.[index]?.role ? '!border-red-500 focus:!ring-red-500/20' : ''}`}
                       >
                         <option value="">Select Role</option>
@@ -607,7 +673,15 @@ export default function RegistrationForm() {
                                       watch(`players.${idx}.role`);
 
                       return (
-                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
+                        <div 
+                          key={idx} 
+                          id={`yt-file-container-${idx}`}
+                          className={`bg-slate-900/40 border rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn transition-colors ${
+                            showUploadErrors && !file
+                              ? 'border-red-500/50 bg-red-950/10 shadow-[0_0_10px_rgba(239,68,68,0.15)] animate-pulse'
+                              : 'border-slate-800/80'
+                          }`}
+                        >
                           <div className="flex items-center gap-2 flex-grow min-w-0">
                             <User className="w-4 h-4 text-gold-bright shrink-0" />
                             <div className="flex-grow flex items-center gap-1.5">
@@ -720,7 +794,15 @@ export default function RegistrationForm() {
                                       watch(`players.${idx}.role`);
 
                       return (
-                        <div key={idx} className="bg-slate-900/40 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
+                        <div 
+                          key={idx} 
+                          id={`ig-file-container-${idx}`}
+                          className={`bg-slate-900/40 border rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn transition-colors ${
+                            showUploadErrors && !file
+                              ? 'border-red-500/50 bg-red-950/10 shadow-[0_0_10px_rgba(239,68,68,0.15)] animate-pulse'
+                              : 'border-slate-800/80'
+                          }`}
+                        >
                           <div className="flex items-center gap-2 flex-grow min-w-0">
                             <User className="w-4 h-4 text-gold-bright shrink-0" />
                             <div className="flex-grow flex items-center gap-1.5">
@@ -806,7 +888,7 @@ export default function RegistrationForm() {
               <div className="text-gold/30 font-mono tracking-widest text-sm font-bold">////</div>
             </div>
 
-            <div className="flex items-start gap-3 cursor-pointer select-none font-sans">
+            <div id="terms-container" className="flex items-start gap-3 cursor-pointer select-none font-sans">
               <div className="relative flex items-center mt-1">
                 <input
                   type="checkbox"
@@ -837,10 +919,10 @@ export default function RegistrationForm() {
           {/* SUBMIT BUTTON */}
           <div className="flex flex-col items-center pt-4">
             {/* Submit Requirements State message */}
-            {isSubmitDisabled && !loading && (
-              <p className="text-gray-500 text-[10px] md:text-xs font-gaming uppercase tracking-wide text-center mb-4 leading-relaxed max-w-md">
+            {!allProofsUploaded && !loading && (
+              <p className="text-gray-500 text-[10px] md:text-xs font-gaming uppercase tracking-wide text-center mb-4 leading-relaxed max-w-md animate-pulse">
                 <span className="text-gold-bright font-black">Upload Proof Status:</span> YouTube ({activeYtFiles.filter(Boolean).length}/{requiredCount}) &bull; Instagram ({activeIgFiles.filter(Boolean).length}/{requiredCount})<br />
-                <span className="text-gray-600 text-[9px] lowercase">(submit button enables automatically when all screenshots are uploaded)</span>
+                <span className="text-red-400 text-[9px] lowercase">(please upload follow screenshots for all team members before submitting)</span>
               </p>
             )}
 
