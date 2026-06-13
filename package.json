@@ -1,0 +1,12 @@
+{
+  "name": "shield-showdown-root",
+  "version": "1.0.0",
+  "description": "Root package runner for The Shield Showdown esports MERN tournament website",
+  "scripts": {
+    "install-backend": "npm install --prefix backend",
+    "install-frontend": "npm install --prefix frontend",
+    "install-all": "npm run install-backend && npm run install-frontend",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix frontend"
+  }
+}

@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#080809] text-slate-100 font-sans selection:bg-gold selection:text-black;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #08090d;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+  border: 2px solid #08090d;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Custom styles for esports look */
+.glow-text {
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.glow-border {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.glow-border-active {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.7);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #aa8c2c 100%);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(135deg, #FFFFFF 10%, #FFD700 60%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gaming-grid {
+  background-image: 
+    linear-gradient(rgba(212, 175, 55, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.015) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Custom High Contrast inputs for form simplicity & user friendliness */
+.form-input {
+  background-color: #0b0c10;
+  border: 1px solid #334155; /* border-slate-700 */
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  color: #f8fafc; /* text-slate-50 */
+  font-size: 0.875rem; /* text-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+  width: 100%;
+}
+.form-input::placeholder {
+  color: #64748b; /* placeholder-slate-500 */
+}
+.form-input:focus {
+  outline: 2px solid transparent;
+  border-color: #FFD700; /* gold-bright */
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+  background-color: #0d0e15;
+}
+
+.form-input-sm {
+  background-color: #0b0c10;
+  border: 1px solid #334155;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  color: #f8fafc;
+  font-size: 0.75rem; /* text-xs */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+  width: 100%;
+}
+.form-input-sm::placeholder {
+  color: #64748b;
+}
+.form-input-sm:focus {
+  outline: 2px solid transparent;
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+  background-color: #0d0e15;
+}
+
+/* Chrome, Safari, Edge, Opera: Hide number input spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox: Hide number input spinners */
+input[type=number] {
+  -moz-appearance: textfield;
+}
