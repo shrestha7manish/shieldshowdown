@@ -16,8 +16,8 @@ export default function RegistrationDetails() {
   const [modalImageSrc, setModalImageSrc] = useState('');
   const [modalTitle, setModalTitle] = useState('');
 
-  const API_BASE_URL = 'http://localhost:5000/api';
-  const IMAGE_BASE_URL = 'http://localhost:5000/uploads';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '/uploads') : 'http://localhost:5000/uploads');
 
   const getImageUrl = (proof) => {
     if (proof && (proof.startsWith('http://') || proof.startsWith('https://'))) {
