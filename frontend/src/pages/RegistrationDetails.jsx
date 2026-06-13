@@ -19,6 +19,13 @@ export default function RegistrationDetails() {
   const API_BASE_URL = 'http://localhost:5000/api';
   const IMAGE_BASE_URL = 'http://localhost:5000/uploads';
 
+  const getImageUrl = (proof) => {
+    if (proof && (proof.startsWith('http://') || proof.startsWith('https://'))) {
+      return proof;
+    }
+    return `${IMAGE_BASE_URL}/${proof}`;
+  };
+
   useEffect(() => {
     fetchRegistrationDetails();
   }, [id]);
@@ -36,14 +43,15 @@ export default function RegistrationDetails() {
   };
 
   const openImageModal = (filename, title) => {
-    setModalImageSrc(`${IMAGE_BASE_URL}/${filename}`);
+    setModalImageSrc(getImageUrl(filename));
     setModalTitle(title);
     setModalOpen(true);
   };
 
   const handleDownload = async (filename, title) => {
     try {
-      const response = await fetch(`${IMAGE_BASE_URL}/${filename}`);
+      const imageUrl = getImageUrl(filename);
+      const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -55,7 +63,7 @@ export default function RegistrationDetails() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      window.open(`${IMAGE_BASE_URL}/${filename}`, '_blank');
+      window.open(getImageUrl(filename), '_blank');
     }
   };
 
@@ -238,7 +246,7 @@ export default function RegistrationDetails() {
                         className="relative group aspect-video rounded overflow-hidden border border-gold/10 bg-black flex items-center justify-center cursor-zoom-in"
                       >
                         <img
-                          src={`${IMAGE_BASE_URL}/${proof}`}
+                          src={getImageUrl(proof)}
                           alt={`YouTube Proof ${idx + 1}`}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
@@ -286,7 +294,7 @@ export default function RegistrationDetails() {
                         className="relative group aspect-video rounded overflow-hidden border border-gold/10 bg-black flex items-center justify-center cursor-zoom-in"
                       >
                         <img
-                          src={`${IMAGE_BASE_URL}/${proof}`}
+                          src={getImageUrl(proof)}
                           alt={`Instagram Proof ${idx + 1}`}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
