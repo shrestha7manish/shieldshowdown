@@ -32,6 +32,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [deleteId, setDeleteId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteLogoId, setDeleteLogoId] = useState(null);
+  const [logoDeleteLoading, setLogoDeleteLoading] = useState(false);
+  const [logoDeleteSuccess, setLogoDeleteSuccess] = useState(false);
 
   // Timer Settings State
   const [timerEnabled, setTimerEnabled] = useState(true);
@@ -162,22 +167,31 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleLogoDelete(id) {
-    const updatedTeams = invitedTeams.filter(team => team.id !== id);
-    setInvitedTeams(updatedTeams);
-    setLogoSaving(true);
-    setLogoMessage({ text: '', type: '' });
+  function handleLogoDelete(id) {
+    setDeleteLogoId(id);
+    setLogoDeleteLoading(false);
+    setLogoDeleteSuccess(false);
+  }
+
+  async function confirmLogoDelete() {
+    if (!deleteLogoId) return;
+    setLogoDeleteLoading(true);
+    setLogoDeleteSuccess(false);
+    const updatedTeams = invitedTeams.filter(team => team.id !== deleteLogoId);
     try {
       await axios.post(`${API_BASE_URL}/settings/invited_teams`, { value: updatedTeams });
-      setLogoMessage({ text: 'Logo deleted successfully!', type: 'success' });
+      setInvitedTeams(updatedTeams);
+      setLogoDeleteSuccess(true);
+      setTimeout(() => {
+        setDeleteLogoId(null);
+        setLogoDeleteSuccess(false);
+      }, 1500);
     } catch (error) {
       console.error('Error deleting logo:', error);
       setLogoMessage({ text: 'Failed to delete logo setting from database.', type: 'error' });
+      setDeleteLogoId(null);
     } finally {
-      setLogoSaving(false);
-      setTimeout(() => {
-        setLogoMessage({ text: '', type: '' });
-      }, 5000);
+      setLogoDeleteLoading(false);
     }
   }
 
@@ -233,18 +247,28 @@ export default function AdminDashboard() {
 
   function handleDeleteClick(id) {
     setDeleteId(id);
+    setDeleteLoading(false);
+    setDeleteSuccess(false);
   };
 
   async function confirmDelete() {
     if (!deleteId) return;
+    setDeleteLoading(true);
+    setDeleteSuccess(false);
     try {
       await axios.delete(`${API_BASE_URL}/registrations/${deleteId}`);
       setRegistrations(registrations.filter(r => r._id !== deleteId));
       fetchStats(); // Update counters
-      setDeleteId(null);
+      setDeleteSuccess(true);
+      setTimeout(() => {
+        setDeleteId(null);
+        setDeleteSuccess(false);
+      }, 1500);
     } catch (error) {
       console.error('Error deleting registration:', error);
       setErrorMsg('Failed to delete registration record.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -728,28 +752,113 @@ export default function AdminDashboard() {
       {/* DELETE CONFIRMATION MODAL */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-dark-card border border-red-500/30 rounded-xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-red-600" />
-            <h3 className="font-gaming font-bold text-base md:text-lg text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" /> Confirm Deletion
-            </h3>
-            <p className="text-gray-300 text-sm font-sans mb-6">
-              Are you sure you want to delete this registration? This will permanently erase the database record and delete screenshot upload files off the server. This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="px-4 py-2 bg-slate-850 hover:bg-slate-750 border border-slate-650 text-white rounded text-xs font-bold cursor-pointer transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-semibold cursor-pointer transition-all"
-              >
-                Delete Record
-              </button>
-            </div>
+          <div className={`bg-dark-card border rounded-xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden transition-all duration-300 ${
+            deleteSuccess ? 'border-emerald-500/30' : 'border-red-500/30'
+          }`}>
+            <div className={`absolute top-0 left-0 w-full h-1 transition-all duration-300 ${
+              deleteSuccess ? 'bg-emerald-500' : 'bg-red-600'
+            }`} />
+            
+            {deleteSuccess ? (
+              <div className="text-center py-6 animate-fadeIn">
+                <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.4)] animate-bounce" />
+                <h3 className="font-gaming font-black text-lg text-white uppercase tracking-wider mb-2">
+                  DELETE SUCCESSFUL
+                </h3>
+                <p className="text-gray-400 text-xs font-sans">
+                  The registration record has been permanently deleted from the database.
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3 className="font-gaming font-bold text-base md:text-lg text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" /> Confirm Deletion
+                </h3>
+                <p className="text-gray-300 text-sm font-sans mb-6">
+                  Are you sure you want to delete this registration? This will permanently erase the database record and delete screenshot upload files off the server. This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    disabled={deleteLoading}
+                    onClick={() => setDeleteId(null)}
+                    className="px-4 py-2 bg-slate-850 hover:bg-slate-750 border border-slate-650 disabled:opacity-50 text-white rounded text-xs font-bold cursor-pointer transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={deleteLoading}
+                    onClick={confirmDelete}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 disabled:cursor-not-allowed text-white rounded text-xs font-semibold cursor-pointer transition-all flex items-center gap-2"
+                  >
+                    {deleteLoading ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Record'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* LOGO DELETE CONFIRMATION MODAL */}
+      {deleteLogoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className={`bg-dark-card border rounded-xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden transition-all duration-300 ${
+            logoDeleteSuccess ? 'border-emerald-500/30' : 'border-red-500/30'
+          }`}>
+            <div className={`absolute top-0 left-0 w-full h-1 transition-all duration-300 ${
+              logoDeleteSuccess ? 'bg-emerald-500' : 'bg-red-600'
+            }`} />
+            
+            {logoDeleteSuccess ? (
+              <div className="text-center py-6 animate-fadeIn">
+                <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.4)] animate-bounce" />
+                <h3 className="font-gaming font-black text-lg text-white uppercase tracking-wider mb-2">
+                  LOGO DELETED
+                </h3>
+                <p className="text-gray-400 text-xs font-sans">
+                  The invited team logo has been successfully deleted from the database.
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3 className="font-gaming font-bold text-base md:text-lg text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" /> Confirm Logo Deletion
+                </h3>
+                <p className="text-gray-300 text-sm font-sans mb-6">
+                  Are you sure you want to delete this invited team logo? This will remove it from the homepage marquee carousel. This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    disabled={logoDeleteLoading}
+                    onClick={() => setDeleteLogoId(null)}
+                    className="px-4 py-2 bg-slate-850 hover:bg-slate-750 border border-slate-650 disabled:opacity-50 text-white rounded text-xs font-bold cursor-pointer transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={logoDeleteLoading}
+                    onClick={confirmLogoDelete}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 disabled:cursor-not-allowed text-white rounded text-xs font-semibold cursor-pointer transition-all flex items-center gap-2"
+                  >
+                    {logoDeleteLoading ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Logo'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
