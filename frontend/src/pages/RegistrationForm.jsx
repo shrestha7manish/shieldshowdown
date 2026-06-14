@@ -94,7 +94,6 @@ export default function RegistrationForm() {
   const [igFiles, setIgFiles] = useState([null, null, null, null, null]);
   const [igPreviews, setIgPreviews] = useState([null, null, null, null, null]);
 
-  const [countdown, setCountdown] = useState(4);
   const [showUploadErrors, setShowUploadErrors] = useState(false);
 
   // React Hook Form
@@ -376,7 +375,6 @@ export default function RegistrationForm() {
         setYtPreviews([null, null, null, null, null]);
         setIgFiles([null, null, null, null, null]);
         setIgPreviews([null, null, null, null, null]);
-        setCountdown(4);
         setShowUploadErrors(false);
       }
     } catch (err) {
@@ -407,21 +405,7 @@ export default function RegistrationForm() {
   const isSubmitDisabled = loading || isFormDisabled;
   const allProofsUploaded = activeYtFiles.every(Boolean) && activeIgFiles.every(Boolean);
 
-  useEffect(() => {
-    if (successData) {
-      const timer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            window.location.href = "https://discord.gg/MK7eQZayxd";
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [successData]);
+
 
   if (successData) {
     return (
@@ -436,9 +420,7 @@ export default function RegistrationForm() {
         <p className="text-gray-400 font-sans text-base md:text-lg mb-2">
           Registration Submitted Successfully. Glory Awaits Your Team!
         </p>
-        <p className="text-gold-bright font-sans text-sm mb-8 animate-pulse">
-          Diverting to Discord in <span className="font-bold font-gaming">{countdown}</span> seconds...
-        </p>
+
 
         <div className="bg-[#121214] border-2 border-gold/40 rounded-xl p-8 max-w-md mx-auto mb-10 shadow-gold-glow">
           <div className="text-xs uppercase tracking-widest text-gray-500 font-gaming mb-1">Your Registration ID</div>
@@ -465,7 +447,6 @@ export default function RegistrationForm() {
           <button
             onClick={() => {
               setSuccessData(null);
-              setCountdown(4);
             }}
             className="px-8 py-3 bg-slate-800 hover:bg-slate-700 font-gaming text-white font-bold tracking-wider rounded transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
           >
