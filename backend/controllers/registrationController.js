@@ -78,7 +78,7 @@ exports.createRegistration = async (req, res) => {
       return res.status(400).json({ message: 'Both YouTube and Instagram follow screenshots are required.' });
     }
 
-    const { teamName, teamLeaderName, teamLeaderUID, discordUsername, players } = req.body;
+    const { teamName, teamLeaderName, email, discordUsername, players } = req.body;
 
     // Parse players
     let parsedPlayers = [];
@@ -134,7 +134,7 @@ exports.createRegistration = async (req, res) => {
       registrationId,
       teamName,
       teamLeaderName,
-      teamLeaderUID,
+      email,
       discordUsername,
       players: parsedPlayers,
       youtubeProofs: req.files.youtubeProofs.map(f => f.path),
@@ -167,7 +167,8 @@ exports.getRegistrations = async (req, res) => {
         $or: [
           { registrationId: searchRegex },
           { teamName: searchRegex },
-          { teamLeaderName: searchRegex }
+          { teamLeaderName: searchRegex },
+          { email: searchRegex }
         ]
       };
     }

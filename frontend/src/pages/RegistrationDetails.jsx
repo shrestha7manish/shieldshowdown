@@ -143,8 +143,8 @@ export default function RegistrationDetails() {
               </div>
 
               <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4">
-                <span className="block text-xs text-gray-500 uppercase font-gaming tracking-wider mb-1">Leader Free Fire UID</span>
-                <span className="text-white text-lg font-bold font-mono">{registration.teamLeaderUID}</span>
+                <span className="block text-xs text-gray-500 uppercase font-gaming tracking-wider mb-1">Email Address</span>
+                <span className="text-white text-lg font-bold font-sans break-all">{registration.email}</span>
               </div>
 
               <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4 sm:col-span-2 flex items-center justify-between text-xs text-gray-400">

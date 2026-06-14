@@ -458,6 +458,7 @@ export default function AdminDashboard() {
                         <th className="py-4 px-6 font-bold">Registration ID</th>
                         <th className="py-4 px-6 font-bold">Team Name</th>
                         <th className="py-4 px-6 font-bold">Team Leader</th>
+                        <th className="py-4 px-6 font-bold">Email</th>
                         <th className="py-4 px-6 font-bold">Discord Username</th>
                         <th className="py-4 px-6 font-bold">Submission Date</th>
                         <th className="py-4 px-6 font-bold text-right">Actions</th>
@@ -469,6 +470,7 @@ export default function AdminDashboard() {
                           <td className="py-4 px-6 font-gaming font-bold text-white tracking-widest">{reg.registrationId}</td>
                           <td className="py-4 px-6 font-semibold text-white">{reg.teamName}</td>
                           <td className="py-4 px-6 text-gray-300">{reg.teamLeaderName}</td>
+                          <td className="py-4 px-6 text-gray-300 font-sans">{reg.email}</td>
                           <td className="py-4 px-6 text-gray-400 font-mono">{reg.discordUsername}</td>
                           <td className="py-4 px-6 text-gray-400">{new Date(reg.submittedAt).toLocaleDateString()}</td>
                           <td className="py-4 px-6 text-right">

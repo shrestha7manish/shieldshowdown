@@ -113,7 +113,7 @@ export default function RegistrationForm() {
     return {
       teamName: '',
       teamLeaderName: '',
-      teamLeaderUID: '',
+      email: '',
       discordUsername: '',
       players: [
         { playerName: '', playerUID: '', role: '' },
@@ -135,9 +135,8 @@ export default function RegistrationForm() {
   const watchP5Uid = watch('players.4.playerUID');
   const watchP5Role = watch('players.4.role');
 
-  const isP5Active = (watchP5Name && watchP5Name.trim() !== '') ||
-                      (watchP5Uid && watchP5Uid.trim() !== '') ||
-                      (watchP5Role && watchP5Role.trim() !== '');
+  const isP5Active = !!((watchP5Name && watchP5Name.trim() !== '') ||
+                      (watchP5Uid && watchP5Uid.trim() !== ''));
 
   const requiredCount = isP5Active ? 5 : 4;
   const watchTerms = watch('termsAccepted');
@@ -251,7 +250,7 @@ export default function RegistrationForm() {
   const formFieldOrder = [
     'teamName',
     'teamLeaderName',
-    'teamLeaderUID',
+    'email',
     'discordUsername',
     ...[0, 1, 2, 3, 4].flatMap(idx => [
       `players.${idx}.playerName`,
@@ -334,7 +333,7 @@ export default function RegistrationForm() {
       const formData = new FormData();
       formData.append('teamName', data.teamName);
       formData.append('teamLeaderName', data.teamLeaderName);
-      formData.append('teamLeaderUID', data.teamLeaderUID);
+      formData.append('email', data.email);
       formData.append('discordUsername', data.discordUsername);
       formData.append('players', JSON.stringify(cleanPlayers));
 
@@ -362,7 +361,7 @@ export default function RegistrationForm() {
         reset({
           teamName: '',
           teamLeaderName: '',
-          teamLeaderUID: '',
+          email: '',
           discordUsername: '',
           players: [
             { playerName: '', playerUID: '', role: '' },
@@ -639,21 +638,27 @@ export default function RegistrationForm() {
                 )}
               </div>
 
-              {/* Leader UID */}
+              {/* Email Address */}
               <div>
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Team Leader Free Fire ID <span className="text-red-500">*</span>
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   disabled={isFormDisabled}
-                  {...register('teamLeaderUID', { required: 'Free Fire UID is required' })}
+                  {...register('email', { 
+                    required: 'Email Address is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
                   placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
-                  className={`w-full form-input ${errors.teamLeaderUID ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
+                  className={`w-full form-input ${errors.email ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                 />
-                {errors.teamLeaderUID && (
+                {errors.email && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5" /> {errors.teamLeaderUID.message}
+                    <AlertTriangle className="w-3.5 h-3.5" /> {errors.email.message}
                   </p>
                 )}
               </div>

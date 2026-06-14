@@ -10,7 +10,7 @@ const registrationSchema = new mongoose.Schema({
   registrationId: { type: String, unique: true },
   teamName: { type: String, required: true },
   teamLeaderName: { type: String, required: true },
-  teamLeaderUID: { type: String, required: true },
+  email: { type: String, required: true },
   discordUsername: { type: String, required: true },
   players: {
     type: [playerSchema],
