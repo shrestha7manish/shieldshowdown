@@ -137,11 +137,7 @@ export default function AdminDashboard() {
       const formData = new FormData();
       formData.append('logo', file);
 
-      const uploadRes = await axios.post(`${API_BASE_URL}/settings/upload-logo`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const uploadRes = await axios.post(`${API_BASE_URL}/settings/upload-logo`, formData);
 
       if (uploadRes.data && uploadRes.data.url) {
         const newLogoUrl = uploadRes.data.url;
