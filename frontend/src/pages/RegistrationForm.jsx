@@ -13,6 +13,9 @@ export default function RegistrationForm() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(false);
 
+  // Invited Teams State
+  const [invitedTeams, setInvitedTeams] = useState([]);
+
   useEffect(() => {
     const fetchTimerConfig = async () => {
       try {
@@ -25,7 +28,19 @@ export default function RegistrationForm() {
         console.error('Error fetching timer configuration:', error);
       }
     };
+    const fetchInvitedTeams = async () => {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await axios.get(`${API_BASE_URL}/settings/invited_teams`);
+        if (response.data && response.data.value) {
+          setInvitedTeams(response.data.value);
+        }
+      } catch (error) {
+        console.error('Error fetching invited teams:', error);
+      }
+    };
     fetchTimerConfig();
+    fetchInvitedTeams();
   }, []);
 
   useEffect(() => {
@@ -462,6 +477,17 @@ export default function RegistrationForm() {
     );
   }
 
+  // Duplicate logos dynamically to guarantee enough items exist for seamless scrolling marquee
+  const getMarqueeItems = () => {
+    if (invitedTeams.length === 0) return [];
+    let items = [...invitedTeams];
+    while (items.length < 15) {
+      items = [...items, ...invitedTeams];
+    }
+    return [...items, ...items];
+  };
+  const marqueeItems = getMarqueeItems();
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col items-center gap-6">
       {/* Main Form Card */}
@@ -513,6 +539,32 @@ export default function RegistrationForm() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* INVITED TEAMS MARQUEE (If any exist) */}
+        {invitedTeams.length > 0 && (
+          <div className="border-b border-gold/20 bg-black/45 p-6 font-sans relative overflow-hidden">
+            <h3 className="font-gaming font-black text-xs text-gold-bright uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+              <Trophy className="w-4 h-4 text-gold-bright animate-pulse" /> CHAMPIONS & INVITED TEAMS
+            </h3>
+            
+            <div className="marquee-container">
+              <div className="marquee-content">
+                {marqueeItems.map((team, idx) => (
+                  <div 
+                    key={`${team.id}-${idx}`} 
+                    className="flex-shrink-0 flex items-center justify-center bg-slate-950/60 border border-gold/20 rounded-xl p-3 w-28 h-20 shadow-[0_0_10px_rgba(212,175,55,0.05)] hover:border-gold-bright hover:shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:scale-105 transition-all duration-300"
+                  >
+                    <img 
+                      src={team.logoUrl} 
+                      alt="Invited Team Logo" 
+                      className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_5px_rgba(255,255,255,0.15)]" 
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

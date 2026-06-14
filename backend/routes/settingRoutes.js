@@ -2,6 +2,21 @@ const express = require('express');
 const router = express.Router();
 const Setting = require('../models/Setting');
 
+const upload = require('../config/multer');
+
+// Upload logo to Cloudinary
+router.post('/upload-logo', upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+    res.status(200).json({ url: req.file.path });
+  } catch (error) {
+    console.error('Error uploading logo:', error);
+    res.status(500).json({ message: 'Error uploading logo.' });
+  }
+});
+
 // Get setting by key
 router.get('/:key', async (req, res) => {
   try {
@@ -15,6 +30,9 @@ router.get('/:key', async (req, res) => {
           title: 'Registration Closes In'
         };
         return res.status(200).json({ key: 'timer', value: defaultTimer });
+      }
+      if (req.params.key === 'invited_teams') {
+        return res.status(200).json({ key: 'invited_teams', value: [] });
       }
       return res.status(404).json({ message: 'Setting not found' });
     }

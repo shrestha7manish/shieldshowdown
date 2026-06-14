@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Calendar, Search, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Search, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2, Upload } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -10,6 +10,9 @@ export default function AdminDashboard() {
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   function handleLoginSubmit(e) {
     e.preventDefault();
@@ -37,6 +40,12 @@ export default function AdminDashboard() {
   const [timerSaving, setTimerSaving] = useState(false);
   const [timerMessage, setTimerMessage] = useState({ text: '', type: '' });
 
+  // Invited Teams State
+  const [invitedTeams, setInvitedTeams] = useState([]);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoSaving, setLogoSaving] = useState(false);
+  const [logoMessage, setLogoMessage] = useState({ text: '', type: '' });
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
@@ -44,6 +53,7 @@ export default function AdminDashboard() {
       fetchStats();
       fetchRegistrations();
       fetchTimerSettings();
+      fetchInvitedTeams();
     }
   }, [isLoggedIn]);
 
@@ -57,6 +67,20 @@ export default function AdminDashboard() {
     }
   }, [search, isLoggedIn]);
 
+  // Reset currentPage to 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  // Adjust page if registrations count shrinks
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(registrations.length / itemsPerPage));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [registrations.length, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(registrations.length / itemsPerPage));
 
   async function fetchTimerSettings() {
     try {
@@ -78,6 +102,88 @@ export default function AdminDashboard() {
       console.error('Error fetching timer settings:', error);
     }
   };
+
+  async function fetchInvitedTeams() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/settings/invited_teams`);
+      if (response.data && response.data.value) {
+        setInvitedTeams(response.data.value);
+      }
+    } catch (error) {
+      console.error('Error fetching invited teams:', error);
+    }
+  }
+
+  async function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLogoUploading(true);
+    setLogoMessage({ text: '', type: '' });
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setLogoMessage({ text: 'Only JPEG, JPG, PNG, and WEBP images are allowed.', type: 'error' });
+      setLogoUploading(false);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoMessage({ text: 'Image size cannot exceed 5MB.', type: 'error' });
+      setLogoUploading(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const uploadRes = await axios.post(`${API_BASE_URL}/settings/upload-logo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (uploadRes.data && uploadRes.data.url) {
+        const newLogoUrl = uploadRes.data.url;
+        const updatedTeams = [...invitedTeams, { id: Date.now().toString(), logoUrl: newLogoUrl }];
+        setInvitedTeams(updatedTeams);
+        setLogoSaving(true);
+        const saveRes = await axios.post(`${API_BASE_URL}/settings/invited_teams`, { value: updatedTeams });
+        if (saveRes.status === 200) {
+          setLogoMessage({ text: 'Logo uploaded and saved successfully!', type: 'success' });
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      setLogoMessage({ text: error.response?.data?.message || 'Failed to upload logo.', type: 'error' });
+    } finally {
+      setLogoUploading(false);
+      setLogoSaving(false);
+      e.target.value = '';
+      setTimeout(() => {
+        setLogoMessage({ text: '', type: '' });
+      }, 5000);
+    }
+  }
+
+  async function handleLogoDelete(id) {
+    const updatedTeams = invitedTeams.filter(team => team.id !== id);
+    setInvitedTeams(updatedTeams);
+    setLogoSaving(true);
+    setLogoMessage({ text: '', type: '' });
+    try {
+      await axios.post(`${API_BASE_URL}/settings/invited_teams`, { value: updatedTeams });
+      setLogoMessage({ text: 'Logo deleted successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error deleting logo:', error);
+      setLogoMessage({ text: 'Failed to delete logo setting from database.', type: 'error' });
+    } finally {
+      setLogoSaving(false);
+      setTimeout(() => {
+        setLogoMessage({ text: '', type: '' });
+      }, 5000);
+    }
+  }
 
   async function handleSaveTimerSettings(e) {
     e.preventDefault();
@@ -324,47 +430,124 @@ export default function AdminDashboard() {
                 <p className="text-sm">No tournament registrations found matching filters.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/55 border-b border-gold/15 text-xs font-gaming text-gold-bright uppercase tracking-wider">
-                      <th className="py-4 px-6 font-bold">Registration ID</th>
-                      <th className="py-4 px-6 font-bold">Team Name</th>
-                      <th className="py-4 px-6 font-bold">Team Leader</th>
-                      <th className="py-4 px-6 font-bold">Discord Username</th>
-                      <th className="py-4 px-6 font-bold">Submission Date</th>
-                      <th className="py-4 px-6 font-bold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gold/5 text-sm">
-                    {registrations.map((reg) => (
-                      <tr key={reg._id} className="hover:bg-[#1A1A1E]/30 transition-colors">
-                        <td className="py-4 px-6 font-gaming font-bold text-white tracking-widest">{reg.registrationId}</td>
-                        <td className="py-4 px-6 font-semibold text-white">{reg.teamName}</td>
-                        <td className="py-4 px-6 text-gray-300">{reg.teamLeaderName}</td>
-                        <td className="py-4 px-6 text-gray-400 font-mono">{reg.discordUsername}</td>
-                        <td className="py-4 px-6 text-gray-400">{new Date(reg.submittedAt).toLocaleDateString()}</td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex justify-end gap-3">
-                            <Link
-                              to={`/admin/registration/${reg._id}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-650 rounded text-xs transition-all cursor-pointer font-bold"
-                            >
-                              <Eye className="w-3.5 h-3.5" /> View Details
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteClick(reg._id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-650 hover:bg-red-600 text-white rounded text-xs transition-all cursor-pointer font-bold"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Delete
-                            </button>
-                          </div>
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-black/55 border-b border-gold/15 text-xs font-gaming text-gold-bright uppercase tracking-wider">
+                        <th className="py-4 px-6 font-bold">Registration ID</th>
+                        <th className="py-4 px-6 font-bold">Team Name</th>
+                        <th className="py-4 px-6 font-bold">Team Leader</th>
+                        <th className="py-4 px-6 font-bold">Discord Username</th>
+                        <th className="py-4 px-6 font-bold">Submission Date</th>
+                        <th className="py-4 px-6 font-bold text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gold/5 text-sm">
+                      {registrations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((reg) => (
+                        <tr key={reg._id} className="hover:bg-[#1A1A1E]/30 transition-colors">
+                          <td className="py-4 px-6 font-gaming font-bold text-white tracking-widest">{reg.registrationId}</td>
+                          <td className="py-4 px-6 font-semibold text-white">{reg.teamName}</td>
+                          <td className="py-4 px-6 text-gray-300">{reg.teamLeaderName}</td>
+                          <td className="py-4 px-6 text-gray-400 font-mono">{reg.discordUsername}</td>
+                          <td className="py-4 px-6 text-gray-400">{new Date(reg.submittedAt).toLocaleDateString()}</td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex justify-end gap-3">
+                              <Link
+                                to={`/admin/registration/${reg._id}`}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-650 rounded text-xs transition-all cursor-pointer font-bold"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> View Details
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteClick(reg._id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-650 hover:bg-red-600 text-white rounded text-xs transition-all cursor-pointer font-bold"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Pagination Controls */}
+                {registrations.length > 0 && (
+                  <div className="bg-black/40 border-t border-gold/15 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-sans text-gray-400">
+                    <div>
+                      Showing{' '}
+                      <span className="font-semibold text-white">
+                        {Math.min((currentPage - 1) * itemsPerPage + 1, registrations.length)}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-semibold text-white">
+                        {Math.min(currentPage * itemsPerPage, registrations.length)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-semibold text-white">
+                        {registrations.length}
+                      </span>{' '}
+                      registrations
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 border border-slate-700 text-white font-bold transition-all cursor-pointer select-none"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                          if (
+                            pageNum === 1 ||
+                            pageNum === totalPages ||
+                            Math.abs(pageNum - currentPage) <= 1
+                          ) {
+                            return (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded font-gaming font-black border transition-all cursor-pointer ${
+                                  currentPage === pageNum
+                                    ? 'bg-gold-gradient text-black border-gold font-bold'
+                                    : 'bg-slate-900/50 hover:bg-slate-800 text-white border-slate-700'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          }
+                          
+                          if (
+                            pageNum === 2 ||
+                            pageNum === totalPages - 1
+                          ) {
+                            return <span key={pageNum} className="px-1 text-gray-655 select-none">...</span>;
+                          }
+                          
+                          return null;
+                        })}
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 border border-slate-700 text-white font-bold transition-all cursor-pointer select-none"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -462,6 +645,86 @@ export default function AdminDashboard() {
                 )}
               </button>
             </form>
+          </div>
+
+          {/* Invited Team Logos Setup Card */}
+          <div className="mt-6 bg-[#0b0b0d] border border-gold/15 rounded-xl p-5 shadow-xl relative overflow-hidden font-sans">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient" />
+            <h3 className="font-gaming font-bold text-sm text-gold-bright uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-gold" /> Invited Team Logos
+            </h3>
+
+            {logoMessage.text && (
+              <div className={`p-3 rounded mb-4 text-xs flex items-center gap-2 border ${
+                logoMessage.type === 'success' 
+                  ? 'bg-emerald-950/45 border-emerald-500/35 text-emerald-255' 
+                  : 'bg-red-950/45 border-red-500/35 text-red-255'
+              }`}>
+                {logoMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />}
+                <span className="text-[11px] font-sans">{logoMessage.text}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Upload Logo
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="invited-logo-file"
+                    disabled={logoUploading || logoSaving}
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="invited-logo-file"
+                    className="w-full flex items-center justify-center gap-2 border border-dashed border-slate-700 hover:border-gold/50 rounded-lg p-4 cursor-pointer text-xs text-gray-400 hover:text-white transition-all bg-[#121214]"
+                  >
+                    {logoUploading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-gold" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-gold" />
+                        Choose Logo
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* List of current logos */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Current Logos ({invitedTeams.length})
+                </label>
+                {invitedTeams.length === 0 ? (
+                  <p className="text-[11px] text-gray-500 italic">No team logos uploaded yet.</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {invitedTeams.map((team) => (
+                      <div key={team.id} className="relative group aspect-square bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex items-center justify-center overflow-hidden">
+                        <img src={team.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                        
+                        <button
+                          type="button"
+                          disabled={logoSaving}
+                          onClick={() => handleLogoDelete(team.id)}
+                          className="absolute inset-0 bg-red-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer border-none"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
