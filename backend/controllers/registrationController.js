@@ -118,12 +118,12 @@ exports.createRegistration = async (req, res) => {
       }
     }
 
-    // Validate dynamic proof count matches player count
-    const requiredCount = parsedPlayers.length;
-    if (req.files.youtubeProofs.length !== requiredCount || req.files.instagramProofs.length !== requiredCount) {
+    // Validate required proof count: exactly 2 proofs required (for Player 1 and Player 2)
+    const requiredProofCount = 2;
+    if (req.files.youtubeProofs.length !== requiredProofCount || req.files.instagramProofs.length !== requiredProofCount) {
       await cleanUploadedFiles(req.files);
       return res.status(400).json({
-        message: `Dynamic upload mismatch: You have inputted details for ${requiredCount} team members. Therefore, you must upload exactly ${requiredCount} YouTube follow screenshots and exactly ${requiredCount} Instagram follow screenshots (one screenshot per member).`
+        message: `Dynamic upload mismatch: You must upload exactly ${requiredProofCount} YouTube follow screenshots and exactly ${requiredProofCount} Instagram follow screenshots (one screenshot per member for Player 1 and Player 2).`
       });
     }
 

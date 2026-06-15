@@ -138,6 +138,7 @@ export default function RegistrationForm() {
                       (watchP5Uid && watchP5Uid.trim() !== ''));
 
   const requiredCount = isP5Active ? 5 : 4;
+  const proofRequiredCount = 2;
   const watchTerms = watch('termsAccepted');
 
   const formValues = watch();
@@ -296,14 +297,14 @@ export default function RegistrationForm() {
   const onSubmit = async (data) => {
     setErrorMsg('');
 
-    const activeYtFiles = ytFiles.slice(0, requiredCount);
-    const activeIgFiles = igFiles.slice(0, requiredCount);
+    const activeYtFiles = ytFiles.slice(0, proofRequiredCount);
+    const activeIgFiles = igFiles.slice(0, proofRequiredCount);
 
     const firstMissingYtIdx = activeYtFiles.findIndex(f => !f);
     const firstMissingIgIdx = activeIgFiles.findIndex(f => !f);
 
     if (firstMissingYtIdx !== -1 || firstMissingIgIdx !== -1) {
-      setErrorMsg(`Please upload screenshot proofs for all ${requiredCount} team members.`);
+      setErrorMsg(`Please upload screenshot proofs for Player 1 and Player 2.`);
       setShowUploadErrors(true);
 
       let elementToScroll = null;
@@ -400,8 +401,8 @@ export default function RegistrationForm() {
   const isFormDisabled = timerConfig.isEnabled && isExpired;
 
   // Submit button active state rule
-  const activeYtFiles = ytFiles.slice(0, requiredCount);
-  const activeIgFiles = igFiles.slice(0, requiredCount);
+  const activeYtFiles = ytFiles.slice(0, proofRequiredCount);
+  const activeIgFiles = igFiles.slice(0, proofRequiredCount);
   const isSubmitDisabled = loading || isFormDisabled;
   const allProofsUploaded = activeYtFiles.every(Boolean) && activeIgFiles.every(Boolean);
 
@@ -772,7 +773,7 @@ export default function RegistrationForm() {
             </div>
 
             <p className="text-gray-400 text-xs md:text-sm font-sans">
-              Your team must follow our YouTube and Instagram. Upload screenshots matching the number of squad members ({requiredCount} players detected).
+              Your team must follow our YouTube and Instagram. Upload screenshots verifying follow/subscription for Player 1 and Player 2.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-sans">
@@ -785,7 +786,7 @@ export default function RegistrationForm() {
                       {/* YouTube Icon */}
                       <div className="w-9 h-9 bg-[#FF0000] rounded flex items-center justify-center shrink-0 shadow">
                         <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
-                          <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.52 3.5 12 3.5 12 3.5s-7.52 0-9.388.555a3.002 3.002 0 0 0-2.11 2.108C0 8.03 0 12 0 12s0 3.97.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.48 20.5 12 20.5 12 20.5s7.52 0 9.388-.555a3.002 3.002 0 0 0 2.11-2.108C24 15.97 24 12 24 12s0-3.97-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.52 3.5 12 3.5 12 3.5s-7.52 0-9.388.555a3.002 3.002 0 0 0-2.11 2.108C0 8.03 0 12 0 12s0 3.97.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.48 20.5 12 20.5 12 20.5s7.52 0-9.388-.555a3.002 3.002 0 0 0 2.11-2.108C24 15.97 24 12 24 12s0-3.97-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                         </svg>
                       </div>
                       <div>
@@ -811,7 +812,7 @@ export default function RegistrationForm() {
 
                   {/* Individual Upload Fields Grid */}
                   <div className="space-y-3">
-                    {[...Array(requiredCount)].map((_, idx) => {
+                    {[...Array(proofRequiredCount)].map((_, idx) => {
                       const file = ytFiles[idx];
                       const preview = ytPreviews[idx];
                       const playerName = watch(`players.${idx}.playerName`) || "";
@@ -934,7 +935,7 @@ export default function RegistrationForm() {
 
                   {/* Individual Upload Fields Grid */}
                   <div className="space-y-3">
-                    {[...Array(requiredCount)].map((_, idx) => {
+                    {[...Array(proofRequiredCount)].map((_, idx) => {
                       const file = igFiles[idx];
                       const preview = igPreviews[idx];
                       const playerName = watch(`players.${idx}.playerName`) || "";
@@ -1078,8 +1079,8 @@ export default function RegistrationForm() {
             {/* Submit Requirements State message */}
             {!allProofsUploaded && !loading && !isFormDisabled && (
               <p className="text-gray-500 text-[10px] md:text-xs font-gaming uppercase tracking-wide text-center mb-4 leading-relaxed max-w-md animate-pulse">
-                <span className="text-gold-bright font-black">Upload Proof Status:</span> YouTube ({activeYtFiles.filter(Boolean).length}/{requiredCount}) &bull; Instagram ({activeIgFiles.filter(Boolean).length}/{requiredCount})<br />
-                <span className="text-red-400 text-[9px] lowercase">(please upload follow screenshots for all team members before submitting)</span>
+                <span className="text-gold-bright font-black">Upload Proof Status:</span> YouTube ({activeYtFiles.filter(Boolean).length}/{proofRequiredCount}) &bull; Instagram ({activeIgFiles.filter(Boolean).length}/{proofRequiredCount})<br />
+                <span className="text-red-400 text-[9px] lowercase">(please upload follow screenshots for Player 1 and Player 2 before submitting)</span>
               </p>
             )}
 
