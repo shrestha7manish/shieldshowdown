@@ -129,20 +129,13 @@ export default function RegistrationDetails() {
               </div>
 
               <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4">
-                <span className="block text-xs text-gray-500 uppercase font-gaming tracking-wider mb-1">Discord Contact</span>
-                <span className="text-gold-bright text-lg font-bold font-sans flex items-center gap-1.5">
-                  {registration.discordUsername}
-                </span>
-              </div>
-
-              <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4">
                 <span className="block text-xs text-gray-500 uppercase font-gaming tracking-wider mb-1">Team Leader</span>
                 <span className="text-white text-lg font-bold flex items-center gap-1.5">
                   <User className="w-4 h-4 text-gray-400" /> {registration.teamLeaderName}
                 </span>
               </div>
 
-              <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4">
+              <div className="bg-[#0d0d0f] border border-gold/5 rounded-lg p-4 sm:col-span-2">
                 <span className="block text-xs text-gray-500 uppercase font-gaming tracking-wider mb-1">Email Address</span>
                 <span className="text-white text-lg font-bold font-sans break-all">{registration.email}</span>
               </div>
