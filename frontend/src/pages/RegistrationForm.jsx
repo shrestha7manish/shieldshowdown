@@ -779,7 +779,7 @@ export default function RegistrationForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-sans">
               
               {/* YOUTUBE PROOF */}
-              <div className="bg-[#0b0b0d] border border-gold/10 rounded-xl p-5 flex flex-col justify-between min-h-[360px] shadow-lg">
+              <div className="bg-[#0b0b0d] border border-gold/10 rounded-xl p-5 flex flex-col justify-between shadow-lg">
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-5 pb-3 border-b border-slate-850">
                     <div className="flex items-start gap-3">
@@ -900,7 +900,7 @@ export default function RegistrationForm() {
               </div>
 
               {/* INSTAGRAM PROOF */}
-              <div className="bg-[#0b0b0d] border border-gold/10 rounded-xl p-5 flex flex-col justify-between min-h-[360px] shadow-lg">
+              <div className="bg-[#0b0b0d] border border-gold/10 rounded-xl p-5 flex flex-col justify-between shadow-lg">
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-5 pb-3 border-b border-slate-850">
                     <div className="flex items-start gap-3">
