@@ -109,12 +109,16 @@ exports.createRegistration = async (req, res) => {
       }
     }
 
-    // Validate required players (1 to 4)
+    // Validate required players (1 to 4) and verify numeric playerUID
     for (let i = 0; i < parsedPlayers.length; i++) {
       const p = parsedPlayers[i];
       if (!p.playerName || !p.playerUID || !p.role) {
         await cleanUploadedFiles(req.files);
         return res.status(400).json({ message: `Player ${i + 1} is missing required fields (Name, UID, and Role).` });
+      }
+      if (!/^[0-9]+$/.test(p.playerUID)) {
+        await cleanUploadedFiles(req.files);
+        return res.status(400).json({ message: `Player ${i + 1} ID (UID) must contain numbers only.` });
       }
     }
 

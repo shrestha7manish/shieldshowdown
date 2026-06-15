@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Calendar, Search, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2, Upload } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Search, Trash2, Eye, ShieldAlert, AlertTriangle, Trophy, Clock, Save, RefreshCw, CheckCircle2, Upload, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -245,6 +246,39 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleExportToExcel = () => {
+    if (registrations.length === 0) return;
+
+    // Prepare the data for Excel
+    const dataToExport = registrations.map((reg) => {
+      const row = {
+        'Registration ID': reg.registrationId || '',
+        'Team Name': reg.teamName || '',
+        'Team Leader': reg.teamLeaderName || '',
+        'Email': reg.email || '',
+        'Submission Date': reg.submittedAt ? new Date(reg.submittedAt).toLocaleString() : '',
+      };
+
+      // Add player details (up to 5 players)
+      for (let i = 0; i < 5; i++) {
+        const player = reg.players && reg.players[i];
+        row[`Player ${i + 1} Name`] = player ? player.playerName : '';
+        row[`Player ${i + 1} UID`] = player ? player.playerUID : '';
+        row[`Player ${i + 1} Role`] = player ? player.role : '';
+      }
+
+      return row;
+    });
+
+    // Create a new workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
+
+    // Generate buffer and trigger download
+    XLSX.writeFile(workbook, `Shield_Showdown_Registrations_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   function handleDeleteClick(id) {
     setDeleteId(id);
     setDeleteLoading(false);
@@ -355,10 +389,16 @@ export default function AdminDashboard() {
 
         {/* Exports & Logout Buttons */}
         <div className="flex flex-wrap gap-3">
-
+          <button
+            onClick={handleExportToExcel}
+            disabled={registrations.length === 0}
+            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-emerald-600 hover:bg-emerald-500 border border-emerald-550/30 rounded font-bold transition-all cursor-pointer shadow-lg disabled:opacity-45 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4 text-white" /> Export to Excel
+          </button>
           <Link
             to="/"
-            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded font-bold transition-all cursor-pointer shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-gaming text-white bg-slate-800 hover:bg-slate-700 border border-slate-650 rounded font-bold transition-all cursor-pointer shadow-lg"
           >
             Registration Form
           </Link>

@@ -425,8 +425,12 @@ export default function RegistrationForm() {
             {successData.registrationId}
           </div>
           <div className="h-px bg-gold/20 w-3/4 mx-auto my-3" />
-          <div className="text-sm text-gray-300 font-sans">
+          <div className="text-sm text-gray-300 font-sans mb-4">
             Team: <span className="font-bold text-white font-gaming">{successData.teamName}</span>
+          </div>
+          <div className="p-3 bg-[#1e1a0f] border border-gold/25 text-gold-bright rounded-lg text-[11px] font-sans leading-relaxed text-center">
+            <span className="font-gaming font-black tracking-wider block mb-1 text-gold-bright">⚠️ ACTION REQUIRED</span>
+            Please screenshot this registration card and submit it in our Discord server for verification.
           </div>
         </div>
 
@@ -705,12 +709,20 @@ export default function RegistrationForm() {
                       <input
                         type="text"
                         disabled={isFormDisabled}
-                        {...register(`players.${index}.playerUID`, { required: (index < 4 || isP5Active) ? 'Player ID is required' : false })}
+                        {...register(`players.${index}.playerUID`, { 
+                          required: (index < 4 || isP5Active) ? 'Player ID is required' : false,
+                          pattern: {
+                            value: (index < 4 || isP5Active) ? /^[0-9]+$/ : /^(|[0-9]+)$/,
+                            message: 'Numbers only'
+                          }
+                        })}
                         placeholder={isFormDisabled ? 'Closed' : 'Your answer'}
                         className={`w-full form-input-sm ${errors.players?.[index]?.playerUID ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
                       />
                       {errors.players?.[index]?.playerUID && (
-                        <p className="text-red-500 text-[10px] mt-1 font-sans">Required</p>
+                        <p className="text-red-500 text-[10px] mt-1 font-sans">
+                          {errors.players[index].playerUID.message || 'Required'}
+                        </p>
                       )}
                     </div>
 
@@ -901,7 +913,7 @@ export default function RegistrationForm() {
 
                     {/* REDIRECT INSTA BUTTON */}
                     <a
-                      href="https://www.instagram.com/jhuseesports?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                      href="https://www.instagram.com/jhuse164_?igsh=amE4NDVpcmRkanFl"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded text-xs font-bold text-white transition-all shadow shrink-0 cursor-pointer"
