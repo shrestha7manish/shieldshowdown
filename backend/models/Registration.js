@@ -11,7 +11,7 @@ const registrationSchema = new mongoose.Schema({
   teamName: { type: String, required: true },
   teamLeaderName: { type: String, required: true },
   email: { type: String, required: true },
-  discordUsername: { type: String, required: true },
+  discordUsername: { type: String },
   players: {
     type: [playerSchema],
     validate: [val => val.length >= 4 && val.length <= 5, 'Tournament requires between 4 and 5 players']

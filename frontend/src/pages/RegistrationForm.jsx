@@ -113,7 +113,6 @@ export default function RegistrationForm() {
       teamName: '',
       teamLeaderName: '',
       email: '',
-      discordUsername: '',
       players: [
         { playerName: '', playerUID: '', role: '' },
         { playerName: '', playerUID: '', role: '' },
@@ -251,7 +250,6 @@ export default function RegistrationForm() {
     'teamName',
     'teamLeaderName',
     'email',
-    'discordUsername',
     ...[0, 1, 2, 3, 4].flatMap(idx => [
       `players.${idx}.playerName`,
       `players.${idx}.playerUID`,
@@ -334,7 +332,6 @@ export default function RegistrationForm() {
       formData.append('teamName', data.teamName);
       formData.append('teamLeaderName', data.teamLeaderName);
       formData.append('email', data.email);
-      formData.append('discordUsername', data.discordUsername);
       formData.append('players', JSON.stringify(cleanPlayers));
 
       // Append arrays of files to the correct fields
@@ -362,7 +359,6 @@ export default function RegistrationForm() {
           teamName: '',
           teamLeaderName: '',
           email: '',
-          discordUsername: '',
           players: [
             { playerName: '', playerUID: '', role: '' },
             { playerName: '', playerUID: '', role: '' },
@@ -621,7 +617,7 @@ export default function RegistrationForm() {
               </div>
 
               {/* Email Address */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                   Email Address <span className="text-red-500">*</span>
                 </label>
@@ -641,25 +637,6 @@ export default function RegistrationForm() {
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5" /> {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Discord Username */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Discord Username <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  disabled={isFormDisabled}
-                  {...register('discordUsername', { required: 'Discord Username is required' })}
-                  placeholder={isFormDisabled ? 'Registration Closed' : 'Your answer'}
-                  className={`w-full form-input ${errors.discordUsername ? '!border-red-500 focus:!ring-red-500/20' : ''} ${isFormDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900/20 border-slate-800' : ''}`}
-                />
-                {errors.discordUsername && (
-                  <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5" /> {errors.discordUsername.message}
                   </p>
                 )}
               </div>
