@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [timerTargetDate, setTimerTargetDate] = useState('');
   const [timerTitle, setTimerTitle] = useState('Registration Closes In');
+  const [registrationClosed, setRegistrationClosed] = useState(false);
   const [timerSaving, setTimerSaving] = useState(false);
   const [timerMessage, setTimerMessage] = useState({ text: '', type: '' });
 
@@ -92,9 +93,10 @@ export default function AdminDashboard() {
     try {
       const response = await axios.get(`${API_BASE_URL}/settings/timer`);
       if (response.data && response.data.value) {
-        const { isEnabled, targetDate, title } = response.data.value;
+        const { isEnabled, targetDate, title, isClosed } = response.data.value;
         setTimerEnabled(isEnabled);
         setTimerTitle(title || 'Registration Closes In');
+        setRegistrationClosed(!!isClosed);
         if (targetDate) {
           const dateObj = new Date(targetDate);
           if (!isNaN(dateObj.getTime())) {
@@ -206,7 +208,8 @@ export default function AdminDashboard() {
         value: {
           isEnabled: timerEnabled,
           targetDate: targetDateISO,
-          title: timerTitle
+          title: timerTitle,
+          isClosed: registrationClosed
         }
       };
       await axios.post(`${API_BASE_URL}/settings/timer`, payload);
@@ -617,7 +620,7 @@ export default function AdminDashboard() {
           <div className="bg-[#0b0b0d] border border-gold/15 rounded-xl p-5 shadow-xl relative overflow-hidden font-sans">
             <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient" />
             <h3 className="font-gaming font-bold text-sm text-gold-bright uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gold" /> Timer Setup
+              <Clock className="w-4 h-4 text-gold" /> Registration Control
             </h3>
             
             {timerMessage.text && (
@@ -632,6 +635,37 @@ export default function AdminDashboard() {
             )}
 
             <form onSubmit={handleSaveTimerSettings} className="space-y-4">
+              {/* Form Status Switch */}
+              <div className="border-b border-gold/10 pb-3 mb-3">
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Registration Form Status
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="registration-status"
+                    checked={!registrationClosed}
+                    onChange={(e) => setRegistrationClosed(!e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <label
+                    htmlFor="registration-status"
+                    className={`w-9 h-5 rounded-full p-0.5 cursor-pointer transition-colors relative ${
+                      !registrationClosed ? 'bg-emerald-600' : 'bg-red-600'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 bg-black rounded-full shadow-md transition-transform duration-200 transform ${
+                      !registrationClosed ? 'translate-x-4' : 'translate-x-0'
+                    }`} />
+                  </label>
+                  <span className={`text-xs font-bold transition-colors duration-200 ${
+                    !registrationClosed ? 'text-emerald-400' : 'text-red-500'
+                  }`}>
+                    {!registrationClosed ? 'OPEN (Accepting Entries)' : 'CLOSED (Disabled)'}
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                   Timer Status

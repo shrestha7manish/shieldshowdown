@@ -62,13 +62,19 @@ exports.createRegistration = async (req, res) => {
   };
 
   try {
-    // Check if registration deadline has passed (timer constraint)
+    // Check if registration is explicitly closed or deadline has passed
     const timerSetting = await Setting.findOne({ key: 'timer' });
-    if (timerSetting && timerSetting.value && timerSetting.value.isEnabled) {
-      const deadline = new Date(timerSetting.value.targetDate);
-      if (deadline < new Date()) {
+    if (timerSetting && timerSetting.value) {
+      if (timerSetting.value.isClosed) {
         await cleanUploadedFiles(req.files);
-        return res.status(400).json({ message: 'Registration has closed as the deadline has passed.' });
+        return res.status(400).json({ message: 'Registration is currently closed by the administrator.' });
+      }
+      if (timerSetting.value.isEnabled) {
+        const deadline = new Date(timerSetting.value.targetDate);
+        if (deadline < new Date()) {
+          await cleanUploadedFiles(req.files);
+          return res.status(400).json({ message: 'Registration has closed as the deadline has passed.' });
+        }
       }
     }
 

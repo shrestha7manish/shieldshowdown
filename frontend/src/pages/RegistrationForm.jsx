@@ -394,7 +394,7 @@ export default function RegistrationForm() {
     scrollToFirstError(errors);
   };
 
-  const isFormDisabled = timerConfig.isEnabled && isExpired;
+  const isFormDisabled = timerConfig.isClosed || (timerConfig.isEnabled && isExpired);
 
   // Submit button active state rule
   const activeYtFiles = ytFiles.slice(0, proofRequiredCount);
@@ -491,7 +491,7 @@ export default function RegistrationForm() {
                 <Clock className="w-4 h-4 text-gold-bright" /> {timerConfig.title || 'Registration Closes In'}
               </h3>
 
-              {isExpired ? (
+              {isExpired || timerConfig.isClosed ? (
                 <div className="px-4 py-1.5 bg-red-950/20 border border-red-500/30 rounded text-red-500 font-gaming font-black text-xs tracking-wider uppercase">
                   CLOSED
                 </div>
@@ -551,7 +551,68 @@ export default function RegistrationForm() {
         )}
 
         {/* FORM FIELDS */}
-        <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="p-6 md:p-10 space-y-10">
+        {isFormDisabled ? (
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="relative mb-8">
+              {/* Glowing auras */}
+              <div className="absolute inset-0 bg-red-600/20 blur-3xl rounded-full scale-125 animate-pulse" />
+              <div className="absolute inset-0 bg-gold/10 blur-2xl rounded-full scale-90" />
+              
+              {/* Inner golden shield/lock frame */}
+              <div className="relative bg-[#0d0d0f]/90 border-2 border-gold/45 rounded-full p-8 shadow-2xl flex items-center justify-center filter drop-shadow-[0_0_20px_rgba(212,175,55,0.25)]">
+                <Shield className="w-20 h-20 text-gold-bright animate-pulse" strokeWidth={1} />
+                <div className="absolute -bottom-1 -right-1 bg-red-650 border border-gold/50 rounded-full p-2.5 shadow-lg">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Title */}
+            <h2 className="font-gaming font-black text-3xl md:text-5xl text-white tracking-widest uppercase italic mb-3">
+              REGISTRATION <span className="text-gold-bright">CLOSED</span>
+            </h2>
+            
+            <div className="h-0.5 bg-gradient-to-r from-transparent via-gold/30 to-transparent w-48 mx-auto mb-6" />
+            
+            {/* Message */}
+            <p className="max-w-xl text-gray-400 font-sans text-sm md:text-base leading-relaxed mb-8">
+              The battle lines are drawn and the arenas are set. Sign-ups for <span className="text-white font-semibold font-gaming tracking-wide">The Shield Showdown</span> have officially ended. We want to thank all of the competitive teams who stepped up to register!
+            </p>
+
+            {/* Info Boxes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl w-full mb-10 font-sans text-left">
+              <div className="bg-[#121214]/60 border border-gold/15 rounded-xl p-5 hover:border-gold/30 transition-all duration-300">
+                <h4 className="font-gaming font-bold text-xs text-gold-bright uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-gold" /> Registered Teams
+                </h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  All submitted registrations are currently undergoing database verification. Verified team brackets will be published soon.
+                </p>
+              </div>
+              <div className="bg-[#121214]/60 border border-gold/15 rounded-xl p-5 hover:border-gold/30 transition-all duration-300">
+                <h4 className="font-gaming font-bold text-xs text-gold-bright uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-gold" /> Discord Verification
+                </h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  If you submitted your registration, please check your email and make sure your team leader has submitted verification in our Discord channel.
+                </p>
+              </div>
+            </div>
+
+            {/* Call to Actions */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md">
+              <a
+                href="https://discord.gg/MK7eQZayxd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-8 py-3.5 bg-gold-gradient hover:brightness-110 font-gaming text-black font-black text-xs uppercase tracking-widest rounded shadow-gold-glow hover:shadow-gold-glow-btn transition-all duration-300 text-center cursor-pointer font-bold"
+              >
+                Join Discord Server
+              </a>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="p-6 md:p-10 space-y-10">
           
           {/* Expired Warning Banner */}
           {isFormDisabled && (
@@ -1094,7 +1155,8 @@ export default function RegistrationForm() {
               )}
             </button>
           </div>
-        </form>
+          </form>
+        )}
       </div>
 
       {/* Bottom widgets row */}
